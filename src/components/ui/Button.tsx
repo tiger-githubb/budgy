@@ -1,8 +1,8 @@
-import { COLORS, RADIUS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import React from 'react';
 import { ActivityIndicator, StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from 'react-native';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'tinted';
 
 interface ButtonProps {
     title: string;
@@ -13,6 +13,7 @@ interface ButtonProps {
     disabled?: boolean;
     loading?: boolean;
     icon?: React.ReactNode;
+    size?: 'small' | 'medium' | 'large';
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -24,38 +25,48 @@ export const Button: React.FC<ButtonProps> = ({
     disabled = false,
     loading = false,
     icon,
+    size = 'medium',
 }) => {
+    const colors = useThemeColors();
+
     const getBackgroundColor = () => {
-        if (disabled) return COLORS.surfaceHighlight;
+        if (disabled) return colors.surfaceHighlight;
         switch (variant) {
-            case 'primary': return COLORS.primary;
-            case 'secondary': return COLORS.secondary;
-            case 'danger': return COLORS.status.danger;
+            case 'primary': return colors.primary;
+            case 'secondary': return colors.surface;
+            case 'danger': return colors.status.danger;
+            case 'tinted': return colors.primary + '20';
             case 'outline': return 'transparent';
             case 'ghost': return 'transparent';
-            default: return COLORS.primary;
+            default: return colors.primary;
         }
     };
 
     const getTextColor = () => {
-        if (disabled) return COLORS.text.tertiary;
+        if (disabled) return colors.text.tertiary;
         switch (variant) {
-            case 'primary': return COLORS.text.primary; // Black on Acid Green
-            case 'secondary': return COLORS.text.primary; // Black on Gold
-            case 'danger': return 'white';
-            case 'outline': return COLORS.text.primary;
-            case 'ghost': return COLORS.text.secondary;
-            default: return COLORS.text.primary;
+            case 'primary': return colors.text.inverse;
+            case 'secondary': return colors.text.primary;
+            case 'danger': return '#FFFFFF';
+            case 'tinted': return colors.primary;
+            case 'outline': return colors.text.primary;
+            case 'ghost': return colors.text.secondary;
+            default: return colors.text.inverse;
+        }
+    };
+
+    const getSizeStyles = (): ViewStyle => {
+        switch (size) {
+            case 'small': return { paddingVertical: 8, paddingHorizontal: 16, minHeight: 36 };
+            case 'large': return { paddingVertical: 18, paddingHorizontal: 32, minHeight: 56 };
+            default: return { paddingVertical: 14, paddingHorizontal: 24, minHeight: 50 };
         }
     };
 
     const borderStyle: ViewStyle = variant === 'outline' ? {
-        borderWidth: 1.5, // Slightly bolder border for outline
-        borderColor: COLORS.text.primary, // Black border
+        borderWidth: 1,
+        borderColor: colors.border,
     } : {};
-
-    // For primary, maybe add a subtle border too for the "neo-brutalism" pop?
-    // Let's keep it simple flat for now.
 
     return (
         <TouchableOpacity
@@ -63,6 +74,7 @@ export const Button: React.FC<ButtonProps> = ({
             disabled={disabled || loading}
             style={[
                 styles.button,
+                getSizeStyles(),
                 { backgroundColor: getBackgroundColor() },
                 borderStyle,
                 style,
@@ -74,7 +86,13 @@ export const Button: React.FC<ButtonProps> = ({
             ) : (
                 <>
                     {icon}
-                    <Text style={[styles.text, { color: getTextColor(), marginLeft: icon ? SPACING.s : 0 }, textStyle]}>
+                    <Text style={[
+                        styles.text,
+                        { color: getTextColor(), marginLeft: icon ? 8 : 0 },
+                        size === 'small' && { fontSize: 15 },
+                        size === 'large' && { fontSize: 18 },
+                        textStyle
+                    ]}>
                         {title}
                     </Text>
                 </>
@@ -88,14 +106,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: SPACING.m,
-        paddingHorizontal: SPACING.l,
-        borderRadius: RADIUS.l,  // Modern pill shape
-        minHeight: 52, // Slightly taller click target
+        borderRadius: 14, // iOS rounded rect
     },
     text: {
-        fontSize: 16,
-        fontWeight: '700', // Bolder text
+        fontSize: 17, // iOS body text size
+        fontWeight: '600',
         textAlign: 'center',
     },
 });

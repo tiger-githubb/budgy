@@ -2,7 +2,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useStore } from '@/src/store/useStore';
-import { COLORS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
@@ -10,6 +10,7 @@ import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableWi
 export default function ListFormScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const colors = useThemeColors();
     const { addList, updateList, lists, settings } = useStore();
 
     const isEditing = !!params.id;
@@ -17,7 +18,6 @@ export default function ListFormScreen() {
     const currency = existingList?.currency || settings.defaultCurrency;
 
     const [name, setName] = useState(existingList?.name || '');
-    // Store raw number for calculation, formatted string for display
     const [budgetRaw, setBudgetRaw] = useState(existingList?.budget?.toString() || '');
     const [budgetDisplay, setBudgetDisplay] = useState('');
     const [errors, setErrors] = useState<{ name?: string; budget?: string }>({});
@@ -29,15 +29,12 @@ export default function ListFormScreen() {
     }, []);
 
     const formatNumberWithSpaces = (numStr: string) => {
-        // Remove non-numeric chars
         const cleaned = numStr.replace(/[^0-9]/g, '');
         if (!cleaned) return '';
-        // Format with space every 3 digits
         return cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     };
 
     const handleBudgetChange = (text: string) => {
-        // Remove spaces to get raw value
         const raw = text.replace(/\s/g, '');
         if (!isNaN(Number(raw))) {
             setBudgetRaw(raw);
@@ -96,7 +93,7 @@ export default function ListFormScreen() {
                                 error={errors.budget}
                             />
                             {budgetDisplay ? (
-                                <Text style={styles.currencySuffix}>{currency}</Text>
+                                <Text style={[styles.currencySuffix, { color: colors.text.tertiary }]}>{currency}</Text>
                             ) : null}
                         </View>
 
@@ -116,22 +113,21 @@ export default function ListFormScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: SPACING.l,
+        paddingTop: 24,
     },
     form: {
         flex: 1,
-        paddingTop: SPACING.xl,
-        gap: SPACING.l,
+        paddingTop: 32,
+        gap: 24,
     },
     actions: {
-        marginTop: SPACING.xl,
+        marginTop: 16,
     },
     currencySuffix: {
         position: 'absolute',
-        right: SPACING.m,
-        top: 38, // Adjust based on Input height/label
-        fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.text.tertiary,
+        right: 16,
+        top: 38,
+        fontSize: 17,
+        fontWeight: '500',
     },
 });

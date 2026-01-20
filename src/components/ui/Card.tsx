@@ -1,4 +1,4 @@
-import { COLORS, RADIUS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import React from 'react';
 import { StyleProp, StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
 
@@ -6,18 +6,38 @@ interface CardProps {
     children: React.ReactNode;
     style?: StyleProp<ViewStyle>;
     onPress?: () => void;
-    variant?: 'elevated' | 'flat' | 'outlined';
+    variant?: 'elevated' | 'flat' | 'insetGrouped';
     selected?: boolean;
 }
 
-export const Card: React.FC<CardProps> = ({ children, style, onPress, variant = 'outlined', selected = false }) => {
-    const baseStyle = [
-        styles.card,
-        selected && styles.selected
-    ];
+export const Card: React.FC<CardProps> = ({
+    children,
+    style,
+    onPress,
+    variant = 'insetGrouped',
+    selected = false
+}) => {
+    const colors = useThemeColors();
+
+    const getCardStyle = (): ViewStyle => {
+        const base: ViewStyle = {
+            backgroundColor: colors.surface,
+            borderRadius: 12, // iOS standard
+        };
+
+        if (selected) {
+            return {
+                ...base,
+                borderWidth: 2,
+                borderColor: colors.primary,
+            };
+        }
+
+        return base;
+    };
 
     const Content = (
-        <View style={[baseStyle, style]}>
+        <View style={[styles.card, getCardStyle(), style]}>
             {children}
         </View>
     );
@@ -35,19 +55,9 @@ export const Card: React.FC<CardProps> = ({ children, style, onPress, variant = 
 
 const styles = StyleSheet.create({
     touchable: {
-        marginBottom: SPACING.m,
+        marginBottom: 12,
     },
     card: {
-        padding: SPACING.m,
-        borderRadius: RADIUS.m,
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.border, // Now strictly using the subtle border color
-        // marginBottom handled by wrapper or parent
-    },
-    selected: {
-        borderColor: COLORS.primary,
-        backgroundColor: '#FFFBEB', // Very light gold tint
-        borderWidth: 1.5,
+        padding: 16,
     },
 });

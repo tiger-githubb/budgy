@@ -1,7 +1,7 @@
 import { Card } from '@/src/components/ui/Card';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useStore } from '@/src/store/useStore';
-import { COLORS, RADIUS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import { List } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 
 export default function ArchivedListsScreen() {
     const router = useRouter();
+    const colors = useThemeColors();
     const { lists, settings, unarchiveLists, deleteLists } = useStore();
 
     const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -32,7 +33,6 @@ export default function ArchivedListsScreen() {
         if (isSelectionMode) {
             toggleSelection(listId);
         } else {
-            // Navigate to details if not in selection mode
             router.push(`/list/${listId}`);
         }
     };
@@ -47,7 +47,6 @@ export default function ArchivedListsScreen() {
         setSelectedIds([]);
     };
 
-    // Handle hardware back button in selection mode
     useEffect(() => {
         const onBackPress = () => {
             if (isSelectionMode) {
@@ -58,7 +57,6 @@ export default function ArchivedListsScreen() {
         };
 
         const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
         return () => subscription.remove();
     }, [isSelectionMode]);
 
@@ -84,33 +82,35 @@ export default function ArchivedListsScreen() {
 
         return (
             <Animated.View entering={FadeInDown.delay(index * 50)} layout={Layout.springify()}>
-                <Card style={styles.card} onPress={() => handlePress(item.id)}>
+                <Card style={styles.card} onPress={() => handlePress(item.id)} selected={isSelected}>
                     <TouchableOpacity
                         activeOpacity={1}
                         onPress={() => handlePress(item.id)}
                         onLongPress={() => handleLongPress(item.id)}
                     >
-                        {/* Visual indicator for selection */}
                         {isSelectionMode && (
-                            <View style={[styles.selectionCircle, isSelected && styles.selectedCircle]}>
-                                {isSelected && <Ionicons name="checkmark" size={14} color="black" />}
+                            <View style={[
+                                styles.selectionCircle,
+                                { borderColor: colors.text.tertiary },
+                                isSelected && { backgroundColor: colors.primary, borderColor: colors.primary }
+                            ]}>
+                                {isSelected && <Ionicons name="checkmark" size={14} color={colors.text.inverse} />}
                             </View>
                         )}
 
                         <View style={[styles.cardHeader, isSelectionMode && { marginLeft: 30 }]}>
-                            <Text style={styles.listName}>{item.name}</Text>
-                            {/* Individual actions only if NOT in selection mode */}
+                            <Text style={[styles.listName, { color: colors.text.secondary }]}>{item.name}</Text>
                             {!isSelectionMode && (
                                 <View style={styles.actions}>
                                     <TouchableOpacity onPress={() => unarchiveLists([item.id])} style={styles.actionBtn}>
-                                        <Ionicons name="refresh-circle-outline" size={24} color={COLORS.primary} />
+                                        <Ionicons name="refresh-circle-outline" size={24} color={colors.primary} />
                                     </TouchableOpacity>
                                 </View>
                             )}
                         </View>
 
                         <View style={[styles.statsRow, isSelectionMode && { marginLeft: 30 }]}>
-                            <Text style={styles.value}>
+                            <Text style={[styles.value, { color: colors.text.tertiary }]}>
                                 {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: item.currency || settings.defaultCurrency }).format(item.budget)}
                             </Text>
                         </View>
@@ -122,31 +122,30 @@ export default function ArchivedListsScreen() {
 
     return (
         <ScreenWrapper>
-            {/* Hide Default Header */}
             <Stack.Screen options={{ headerShown: false }} />
 
             <View style={styles.header}>
                 {isSelectionMode ? (
-                    <View style={styles.selectionHeader}>
+                    <View style={[styles.selectionHeader, { backgroundColor: colors.surfaceHighlight }]}>
                         <TouchableOpacity onPress={exitSelectionMode}>
-                            <Ionicons name="close" size={24} color={COLORS.text.primary} />
+                            <Ionicons name="close" size={24} color={colors.text.primary} />
                         </TouchableOpacity>
-                        <Text style={styles.selectionTitle}>{selectedIds.length} Selected</Text>
-                        <View style={{ flexDirection: 'row', gap: SPACING.m }}>
+                        <Text style={[styles.selectionTitle, { color: colors.text.primary }]}>{selectedIds.length} Selected</Text>
+                        <View style={{ flexDirection: 'row', gap: 16 }}>
                             <TouchableOpacity onPress={handleBulkRestore}>
-                                <Ionicons name="refresh" size={24} color={COLORS.primary} />
+                                <Ionicons name="refresh" size={24} color={colors.primary} />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={handleBulkDelete}>
-                                <Ionicons name="trash-outline" size={24} color={COLORS.status.danger} />
+                                <Ionicons name="trash-outline" size={24} color={colors.status.danger} />
                             </TouchableOpacity>
                         </View>
                     </View>
                 ) : (
                     <>
                         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                            <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
+                            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
                         </TouchableOpacity>
-                        <Text style={styles.title}>Archived Lists</Text>
+                        <Text style={[styles.title, { color: colors.text.primary }]}>Archived Lists</Text>
                         <View style={{ width: 24 }} />
                     </>
                 )}
@@ -154,10 +153,10 @@ export default function ArchivedListsScreen() {
 
             {archivedLists.length === 0 ? (
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyText}>No archived lists.</Text>
+                    <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>No archived lists.</Text>
                 </View>
             ) : (
-                <View style={styles.listContainer}>
+                <View style={[styles.listContainer, { backgroundColor: colors.background }]}>
                     <FlatList
                         data={archivedLists}
                         keyExtractor={(item) => item.id}
@@ -175,17 +174,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginVertical: SPACING.l,
+        marginVertical: 24,
         height: 48,
     },
     backButton: {
-        padding: SPACING.s,
-        marginLeft: -SPACING.s,
+        padding: 8,
+        marginLeft: -8,
     },
     title: {
-        fontSize: 20, // Reduced from 24
-        fontWeight: '800',
-        color: COLORS.text.primary,
+        fontSize: 20,
+        fontWeight: '700',
         textAlign: 'center',
         flex: 1,
     },
@@ -194,39 +192,35 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: COLORS.surfaceHighlight,
-        padding: SPACING.s,
-        borderRadius: RADIUS.m,
+        padding: 8,
+        borderRadius: 12,
         height: 48,
     },
     selectionTitle: {
-        fontSize: 16,
-        fontWeight: '700',
+        fontSize: 17,
+        fontWeight: '600',
     },
     listContainer: {
         flex: 1,
-        backgroundColor: COLORS.surfaceSecondary,
-        borderRadius: RADIUS.l,
-        padding: SPACING.m,
-        // Removed negative margins to match Home Screen width
+        borderRadius: 16,
+        padding: 16,
     },
     card: {
-        marginBottom: SPACING.m,
+        marginBottom: 12,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: SPACING.s,
+        marginBottom: 8,
     },
     listName: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '600',
-        color: COLORS.text.secondary, // Dimmed for archived
     },
     actions: {
         flexDirection: 'row',
-        gap: SPACING.m,
+        gap: 16,
     },
     actionBtn: {
         padding: 4,
@@ -236,9 +230,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     value: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '600',
-        color: COLORS.text.tertiary,
     },
     emptyState: {
         flex: 1,
@@ -247,8 +240,7 @@ const styles = StyleSheet.create({
         marginTop: 100,
     },
     emptyText: {
-        fontSize: 16,
-        color: COLORS.text.tertiary,
+        fontSize: 17,
     },
     selectionCircle: {
         position: 'absolute',
@@ -259,13 +251,8 @@ const styles = StyleSheet.create({
         height: 20,
         borderRadius: 10,
         borderWidth: 2,
-        borderColor: COLORS.text.tertiary,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
-    },
-    selectedCircle: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
     },
 });

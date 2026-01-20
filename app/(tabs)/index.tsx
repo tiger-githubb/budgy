@@ -3,7 +3,7 @@ import { Card } from '@/src/components/ui/Card';
 import { GlobalSummary } from '@/src/components/ui/GlobalSummary';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { calculateGlobalTotals, calculateListTotals, useStore } from '@/src/store/useStore';
-import { COLORS, RADIUS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import { List } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -13,12 +13,12 @@ import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const { lists, settings, archiveLists, deleteLists } = useStore();
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // Filter out archived lists for the main view
   const activeLists = useMemo(() => lists.filter(l => !l.isArchived).sort((a, b) => b.createdAt - a.createdAt), [lists]);
 
   const { totalBudget, totalSpent } = calculateGlobalTotals(activeLists);
@@ -55,18 +55,16 @@ export default function HomeScreen() {
     setSelectedIds([]);
   };
 
-  // Handle hardware back button in selection mode
   useEffect(() => {
     const onBackPress = () => {
       if (isSelectionMode) {
         exitSelectionMode();
-        return true; // Prevent default behavior (exit app)
+        return true;
       }
       return false;
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
     return () => subscription.remove();
   }, [isSelectionMode]);
 
@@ -100,36 +98,41 @@ export default function HomeScreen() {
 
     return (
       <Animated.View entering={FadeInDown.delay(index * 50)} layout={Layout.springify()}>
-        <Card
-          onPress={() => handlePress(item.id)}
-        >
+        <Card onPress={() => handlePress(item.id)} selected={isSelected}>
           <TouchableOpacity
             activeOpacity={1}
             onPress={() => handlePress(item.id)}
             onLongPress={() => handleLongPress(item.id)}
           >
-            {/* Visual indicator for selection */}
             {isSelectionMode && (
-              <View style={[styles.selectionCircle, isSelected && styles.selectedCircle]}>
-                {isSelected && <Ionicons name="checkmark" size={14} color="black" />}
+              <View style={[
+                styles.selectionCircle,
+                { borderColor: colors.text.tertiary },
+                isSelected && { backgroundColor: colors.primary, borderColor: colors.primary }
+              ]}>
+                {isSelected && <Ionicons name="checkmark" size={14} color={colors.text.inverse} />}
               </View>
             )}
 
             <View style={[styles.cardHeader, isSelectionMode && { marginLeft: 30 }]}>
-              <Text style={styles.listName}>{item.name}</Text>
-              {isOverBudget && <View style={styles.badge}><Text style={styles.badgeText}>!</Text></View>}
+              <Text style={[styles.listName, { color: colors.text.primary }]}>{item.name}</Text>
+              {isOverBudget && (
+                <View style={[styles.badge, { backgroundColor: colors.status.danger }]}>
+                  <Text style={styles.badgeText}>!</Text>
+                </View>
+              )}
             </View>
 
             <View style={[styles.statsRow, isSelectionMode && { marginLeft: 30 }]}>
               <View>
-                <Text style={styles.label}>Budget</Text>
-                <Text style={styles.value}>
+                <Text style={[styles.label, { color: colors.text.tertiary }]}>Budget</Text>
+                <Text style={[styles.value, { color: colors.text.primary }]}>
                   {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: item.currency || settings.defaultCurrency }).format(item.budget)}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.label}>Remaining</Text>
-                <Text style={[styles.value, { color: isOverBudget ? COLORS.status.danger : COLORS.status.success }]}>
+                <Text style={[styles.label, { color: colors.text.tertiary }]}>Remaining</Text>
+                <Text style={[styles.value, { color: isOverBudget ? colors.status.danger : colors.status.success }]}>
                   {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: item.currency || settings.defaultCurrency }).format(remaining)}
                 </Text>
               </View>
@@ -143,11 +146,11 @@ export default function HomeScreen() {
   const ListFooter = () => (
     <View style={styles.footerContainer}>
       <TouchableOpacity
-        style={styles.archiveButton}
+        style={[styles.archiveButton, { backgroundColor: colors.system.systemGray5 }]}
         onPress={() => router.push('/archived')}
       >
-        <Text style={styles.archiveButtonText}>View Archived Lists</Text>
-        <Ionicons name="chevron-forward" size={16} color={COLORS.text.secondary} />
+        <Text style={[styles.archiveButtonText, { color: colors.text.secondary }]}>View Archived Lists</Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.text.secondary} />
       </TouchableOpacity>
     </View>
   );
@@ -156,36 +159,36 @@ export default function HomeScreen() {
     <ScreenWrapper>
       <View style={styles.header}>
         {isSelectionMode ? (
-          <View style={styles.selectionHeader}>
+          <View style={[styles.selectionHeader, { backgroundColor: colors.surfaceHighlight }]}>
             <TouchableOpacity onPress={exitSelectionMode}>
-              <Ionicons name="close" size={24} color={COLORS.text.primary} />
+              <Ionicons name="close" size={24} color={colors.text.primary} />
             </TouchableOpacity>
-            <Text style={styles.selectionTitle}>{selectedIds.length} Selected</Text>
-            <View style={{ flexDirection: 'row', gap: SPACING.m }}>
+            <Text style={[styles.selectionTitle, { color: colors.text.primary }]}>{selectedIds.length} Selected</Text>
+            <View style={{ flexDirection: 'row', gap: 16 }}>
               <TouchableOpacity onPress={handleBulkArchive}>
-                <Ionicons name="archive-outline" size={24} color={COLORS.text.primary} />
+                <Ionicons name="archive-outline" size={24} color={colors.text.primary} />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleBulkDelete}>
-                <Ionicons name="trash-outline" size={24} color={COLORS.status.danger} />
+                <Ionicons name="trash-outline" size={24} color={colors.status.danger} />
               </TouchableOpacity>
             </View>
           </View>
         ) : (
           <View style={styles.topBar}>
-            <Text style={styles.appTitle}>Budgy</Text>
+            <Text style={[styles.appTitle, { color: colors.text.primary }]}>Budgy</Text>
             <Button
               title="New"
               onPress={handleCreate}
               style={styles.createButton}
-              variant="primary"
-              icon={<Ionicons name="add" size={20} color={COLORS.text.primary} />}
+              size="small"
+              icon={<Ionicons name="add" size={18} color={colors.text.inverse} />}
             />
           </View>
         )}
       </View>
 
       {!isSelectionMode && (
-        <View style={{ marginBottom: SPACING.s }}>
+        <View style={{ marginBottom: 8 }}>
           <GlobalSummary
             totalBudget={totalBudget}
             totalSpent={totalSpent}
@@ -195,19 +198,18 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Lists Section Container */}
-      <View style={styles.listsContainer}>
+      <View style={[styles.listsContainer, { backgroundColor: colors.background }]}>
         {!isSelectionMode && activeLists.length > 0 && (
-          <Text style={styles.sectionTitle}>My Budgets</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>My Budgets</Text>
         )}
 
         {activeLists.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIconContainer}>
-              <Ionicons name="file-tray-outline" size={48} color={COLORS.text.tertiary} />
+            <View style={[styles.emptyIconContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Ionicons name="file-tray-outline" size={48} color={colors.text.tertiary} />
             </View>
-            <Text style={styles.emptyText}>No active budgets.</Text>
-            <Button title="Create Budget" onPress={handleCreate} style={{ marginTop: SPACING.l }} />
+            <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>No active budgets.</Text>
+            <Button title="Create Budget" onPress={handleCreate} style={{ marginTop: 24 }} />
             <ListFooter />
           </View>
         ) : (
@@ -221,14 +223,13 @@ export default function HomeScreen() {
           />
         )}
       </View>
-
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: SPACING.m,
+    marginBottom: 16,
   },
   topBar: {
     flexDirection: 'row',
@@ -237,57 +238,51 @@ const styles = StyleSheet.create({
     height: 48,
   },
   appTitle: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: COLORS.text.secondary,
-    letterSpacing: -1,
+    fontSize: 34,
+    fontWeight: '700',
+    letterSpacing: 0.37,
   },
   createButton: {
-    paddingHorizontal: SPACING.m,
+    paddingHorizontal: 16,
     paddingVertical: 0,
-    height: 40,
-    minHeight: 40,
-    borderRadius: RADIUS.full,
+    height: 36,
+    minHeight: 36,
+    borderRadius: 18,
   },
   selectionHeader: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surfaceHighlight,
-    padding: SPACING.s,
-    borderRadius: RADIUS.m,
+    padding: 8,
+    borderRadius: 12,
     height: 48,
   },
   selectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '600',
   },
   listsContainer: {
     flex: 1,
-    backgroundColor: COLORS.surfaceSecondary, // #f9f9fb
-    borderRadius: RADIUS.l,
-    padding: SPACING.m,
+    borderRadius: 16,
+    padding: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.text.primary,
-    marginBottom: SPACING.m,
-    letterSpacing: -0.5,
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 16,
+    letterSpacing: 0.38,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: SPACING.m,
+    marginBottom: 16,
   },
   listName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text.primary,
+    fontSize: 17,
+    fontWeight: '600',
   },
   badge: {
-    backgroundColor: COLORS.status.danger,
     borderRadius: 4,
     paddingHorizontal: 6,
     justifyContent: 'center',
@@ -303,16 +298,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   label: {
-    fontSize: 12,
-    color: COLORS.text.secondary,
+    fontSize: 11,
     marginBottom: 4,
     fontWeight: '600',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   value: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: COLORS.text.primary,
   },
   emptyState: {
     flex: 1,
@@ -324,17 +318,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.m,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
   },
   emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text.tertiary,
+    fontSize: 17,
+    fontWeight: '500',
   },
   selectionCircle: {
     position: 'absolute',
@@ -345,32 +336,25 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: COLORS.text.tertiary,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
-  selectedCircle: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
   footerContainer: {
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.xl,
+    marginTop: 32,
+    marginBottom: 32,
     alignItems: 'center',
   },
   archiveButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E4E4E7', // Zinc 200
-    paddingVertical: SPACING.s,
-    paddingHorizontal: SPACING.l,
-    borderRadius: RADIUS.full,
-    gap: SPACING.xs,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    gap: 4,
   },
   archiveButtonText: {
-    color: COLORS.text.secondary,
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 15,
   },
 });

@@ -1,4 +1,4 @@
-import { COLORS, RADIUS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import React from 'react';
 import { StyleProp, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
 
@@ -9,51 +9,61 @@ interface InputProps extends TextInputProps {
 }
 
 export const Input: React.FC<InputProps> = ({ label, containerStyle, error, style, ...props }) => {
+    const colors = useThemeColors();
+
     return (
         <View style={[styles.container, containerStyle]}>
-            {label && <Text style={styles.label}>{label}</Text>}
+            {label && (
+                <Text style={[styles.label, { color: colors.text.secondary }]}>
+                    {label}
+                </Text>
+            )}
             <TextInput
                 style={[
                     styles.input,
-                    error ? styles.inputError : null,
+                    {
+                        backgroundColor: colors.system.systemGray6,
+                        color: colors.text.primary,
+                    },
+                    error && { borderColor: colors.status.danger, borderWidth: 1 },
                     style
                 ]}
-                placeholderTextColor={COLORS.text.tertiary}
+                placeholderTextColor={colors.text.tertiary}
                 {...props}
             />
-            {error && <Text style={styles.errorText}>{error}</Text>}
+            {error && (
+                <Text style={[styles.errorText, { color: colors.status.danger }]}>
+                    {error}
+                </Text>
+            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: SPACING.m,
+        marginBottom: 16,
     },
     label: {
-        fontSize: 14,
-        color: COLORS.text.primary, // Higher contrast
-        marginBottom: SPACING.xs,
-        fontWeight: '600',
+        fontSize: 13,
+        fontWeight: '500',
+        marginBottom: 6,
+        marginLeft: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     input: {
-        backgroundColor: COLORS.surface, // Or just transparent
-        borderWidth: 1, // Visible border
-        borderColor: COLORS.border,
-        borderRadius: RADIUS.m,
-        padding: SPACING.m,
-        fontSize: 16,
-        color: COLORS.text.primary,
-        fontWeight: '500',
-    },
-    inputError: {
-        borderColor: COLORS.status.danger,
-        borderWidth: 1.5,
+        borderRadius: 10, // iOS rounded rect for text fields
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 17,
+        fontWeight: '400',
+        minHeight: 50, // iOS standard height
     },
     errorText: {
-        color: COLORS.status.danger,
-        fontSize: 12,
-        marginTop: SPACING.xs,
-        fontWeight: '600',
+        fontSize: 13,
+        marginTop: 4,
+        marginLeft: 4,
+        fontWeight: '500',
     },
 });

@@ -2,7 +2,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useStore } from '@/src/store/useStore';
-import { COLORS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import { ItemStatus } from '@/src/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -11,22 +11,21 @@ import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableWi
 export default function ItemFormScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const colors = useThemeColors();
     const { listId, itemId } = params;
     const { lists, addItem, updateItem, deleteItem } = useStore();
 
     const list = lists.find(l => l.id === listId);
     const existingItem = list?.items.find(i => i.id === itemId);
     const isEditing = !!existingItem;
-    const currency = list?.currency || '€'; // Fallback
+    const currency = list?.currency || '€';
 
     const [name, setName] = useState(existingItem?.name || '');
-    // Raw value for calculation, formatted for display
     const [amountRaw, setAmountRaw] = useState(existingItem?.amount?.toString() || '');
     const [amountDisplay, setAmountDisplay] = useState('');
     const [status, setStatus] = useState<ItemStatus>(existingItem?.status || 'PLANNED');
     const [errors, setErrors] = useState<{ name?: string; amount?: string }>({});
 
-    // Init formatted value
     React.useEffect(() => {
         if (amountRaw) {
             handleAmountChange(amountRaw);
@@ -34,7 +33,6 @@ export default function ItemFormScreen() {
     }, []);
 
     const formatNumberWithSpaces = (numStr: string) => {
-        const cleaned = numStr.replace(/[^0-9.]/g, ''); // Allow decimal point if needed, but user seems to use integers mostly. Sticking to simple integers for consistency with current code unless decimals requested? The list form used integer logic `replace(/[^0-9]/g, '')`. I'll stick to that for consistency.
         const integerCleaned = numStr.replace(/[^0-9]/g, '');
         if (!integerCleaned) return '';
         return integerCleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -65,10 +63,8 @@ export default function ItemFormScreen() {
         if (!validate() || !list) return;
 
         if (isEditing && existingItem) {
-            // Keep existing status if editing
             updateItem(list.id, existingItem.id, { name, amount: Number(amountRaw), status: existingItem.status });
         } else {
-            // Default to PLANNED for new items
             addItem(list.id, name, Number(amountRaw), 'PLANNED');
         }
         router.back();
@@ -101,7 +97,7 @@ export default function ItemFormScreen() {
                                 error={errors.amount}
                             />
                             {amountDisplay ? (
-                                <Text style={styles.currencySuffix}>{currency}</Text>
+                                <Text style={[styles.currencySuffix, { color: colors.text.tertiary }]}>{currency}</Text>
                             ) : null}
                         </View>
 
@@ -121,22 +117,21 @@ export default function ItemFormScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: SPACING.l,
+        paddingTop: 24,
     },
     form: {
         flex: 1,
-        paddingTop: SPACING.xl,
-        gap: SPACING.l,
+        paddingTop: 32,
+        gap: 24,
     },
     actions: {
-        marginTop: SPACING.m,
+        marginTop: 16,
     },
     currencySuffix: {
         position: 'absolute',
-        right: SPACING.m,
+        right: 16,
         top: 38,
-        fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.text.tertiary,
+        fontSize: 17,
+        fontWeight: '500',
     },
 });

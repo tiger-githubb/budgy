@@ -1,30 +1,37 @@
-import { HapticTab } from '@/components/haptic-tab'; // Keeping this as it's nice
-import { COLORS } from '@/src/theme';
+import { HapticTab } from '@/components/haptic-tab';
+import { useThemeColors } from '@/src/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 
 export default function TabLayout() {
+  const colors = useThemeColors();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.text.tertiary,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.text.tertiary,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: Platform.select({
           ios: {
-            position: 'absolute', // Blur effect style
+            position: 'absolute',
             borderTopWidth: 0,
-            backgroundColor: 'rgba(255,255,255,0.9)',
+            backgroundColor: colors.system.systemBackground + 'E6', // 90% opacity for blur effect
+            backdropFilter: 'blur(20px)',
           },
           default: {
-            backgroundColor: COLORS.surface,
+            backgroundColor: colors.surface,
             borderTopWidth: 0,
             elevation: 8,
           },
         }),
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+        },
       }}>
       <Tabs.Screen
         name="index"

@@ -1,4 +1,4 @@
-import { COLORS, RADIUS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import { Currency } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
@@ -17,6 +17,8 @@ export const GlobalSummary: React.FC<GlobalSummaryProps> = ({
     currency,
     activeCount,
 }) => {
+    const colors = useThemeColors();
+
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
     };
@@ -25,45 +27,54 @@ export const GlobalSummary: React.FC<GlobalSummaryProps> = ({
     const percentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
     const isOverBudget = remaining < 0;
 
+    // Dynamic dark card colors
+    const cardBg = colors.system.secondarySystemBackground;
+    const dividerColor = colors.system.opaqueSeparator;
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: cardBg }]}>
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.label}>Total Budget</Text>
-                    <Text style={styles.bigValue}>{formatMoney(totalBudget)}</Text>
+                    <Text style={[styles.label, { color: colors.text.tertiary }]}>Total Budget</Text>
+                    <Text style={[styles.bigValue, { color: colors.primary }]}>{formatMoney(totalBudget)}</Text>
                 </View>
-                <View style={styles.iconContainer}>
-                    <Ionicons name="wallet-outline" size={24} color={COLORS.primary} />
+                <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
+                    <Ionicons name="wallet-outline" size={24} color={colors.primary} />
                 </View>
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
             <View style={styles.row}>
                 <View style={[styles.statItem, { flex: 1 }]}>
-                    <Text style={styles.subLabel}>Spent</Text>
-                    <Text style={styles.subValue}>
+                    <Text style={[styles.subLabel, { color: colors.text.tertiary }]}>Spent</Text>
+                    <Text style={[styles.subValue, { color: colors.text.primary }]}>
                         {formatMoney(totalSpent)}
                     </Text>
                 </View>
 
-                {/* Vertical Divider */}
-                <View style={{ width: 1, backgroundColor: '#27272A', marginRight: SPACING.l }} />
+                <View style={[styles.verticalDivider, { backgroundColor: dividerColor }]} />
 
                 <View style={[styles.statItem, { flex: 1, alignItems: 'flex-end' }]}>
-                    <Text style={styles.subLabel}>Remaining</Text>
+                    <Text style={[styles.subLabel, { color: colors.text.tertiary }]}>Remaining</Text>
                     <Text style={[
                         styles.subValue,
-                        { color: isOverBudget ? COLORS.status.danger : COLORS.status.success }
+                        { color: isOverBudget ? colors.status.danger : colors.status.success }
                     ]}>
                         {formatMoney(remaining)}
                     </Text>
                 </View>
             </View>
 
-            {/* Decorative progress line */}
-            <View style={styles.progressBg}>
-                <View style={[styles.progressFill, { width: `${Math.min(percentage, 100)}%`, backgroundColor: percentage > 100 ? COLORS.status.danger : COLORS.primary }]} />
+            {/* Progress bar */}
+            <View style={[styles.progressBg, { backgroundColor: colors.system.systemGray5 }]}>
+                <View style={[
+                    styles.progressFill,
+                    {
+                        width: `${Math.min(percentage, 100)}%`,
+                        backgroundColor: percentage > 100 ? colors.status.danger : colors.primary
+                    }
+                ]} />
             </View>
         </View>
     );
@@ -71,64 +82,57 @@ export const GlobalSummary: React.FC<GlobalSummaryProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        padding: SPACING.l,
-        borderRadius: RADIUS.l, // More rounded 24px
-        backgroundColor: COLORS.secondary, // Black background
-        marginBottom: SPACING.l,
-        // Add subtle shadow for depth if needed, but we are waiting on flat design.
-        // However, a hero card can have a gentle shadow.
-        // Let's keep it flat but high contrast.
+        padding: 20,
+        borderRadius: 16,
+        marginBottom: 24,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: SPACING.m,
+        marginBottom: 16,
     },
     label: {
-        fontSize: 14,
-        color: COLORS.text.tertiary, // Grey
+        fontSize: 13,
         textTransform: 'uppercase',
         fontWeight: '600',
+        letterSpacing: 0.5,
         marginBottom: 4,
     },
     bigValue: {
-        fontSize: 32,
-        fontWeight: '800',
-        color: COLORS.primary, // Gold
-        letterSpacing: -1,
+        fontSize: 34,
+        fontWeight: '700',
+        letterSpacing: -0.5,
     },
     iconContainer: {
-        padding: 10,
-        backgroundColor: 'rgba(229, 184, 75, 0.15)', // Transparent Gold
-        borderRadius: RADIUS.full,
+        padding: 12,
+        borderRadius: 50,
     },
     divider: {
         height: 1,
-        backgroundColor: '#27272A', // Zinc 800
-        marginBottom: SPACING.m,
+        marginBottom: 16,
+    },
+    verticalDivider: {
+        width: 1,
+        marginHorizontal: 20,
     },
     row: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: SPACING.m,
+        marginBottom: 16,
     },
-    statItem: {
-        // flex: 1,
-    },
+    statItem: {},
     subLabel: {
-        fontSize: 12,
-        color: COLORS.text.tertiary,
+        fontSize: 11,
         marginBottom: 2,
+        fontWeight: '500',
     },
     subValue: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: COLORS.text.inverse, // White
+        fontSize: 17,
+        fontWeight: '600',
     },
     progressBg: {
         height: 4,
-        backgroundColor: '#27272A',
         borderRadius: 2,
         overflow: 'hidden',
     },

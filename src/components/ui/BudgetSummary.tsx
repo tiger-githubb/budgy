@@ -1,4 +1,4 @@
-import { COLORS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import { Currency } from '@/src/types';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -19,31 +19,33 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({
     currency,
     isOverBudget,
 }) => {
+    const colors = useThemeColors();
+
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
     };
 
     return (
-        <Card style={styles.card} variant="elevated">
+        <Card style={styles.card}>
             <View style={styles.header}>
-                <Text style={styles.label}>Total Budget</Text>
-                <Text style={styles.budgetAmount}>{formatMoney(budget)}</Text>
+                <Text style={[styles.label, { color: colors.text.secondary }]}>Total Budget</Text>
+                <Text style={[styles.budgetAmount, { color: colors.text.primary }]}>{formatMoney(budget)}</Text>
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
             <View style={styles.row}>
                 <View style={styles.col}>
-                    <Text style={styles.subLabel}>Planned</Text>
-                    <Text style={styles.plannedAmount}>{formatMoney(plannedTotal)}</Text>
+                    <Text style={[styles.subLabel, { color: colors.text.tertiary }]}>Planned</Text>
+                    <Text style={[styles.plannedAmount, { color: colors.text.primary }]}>{formatMoney(plannedTotal)}</Text>
                 </View>
 
                 <View style={[styles.col, { alignItems: 'flex-end' }]}>
-                    <Text style={styles.subLabel}>Remaining</Text>
+                    <Text style={[styles.subLabel, { color: colors.text.tertiary }]}>Remaining</Text>
                     <Text
                         style={[
                             styles.remainingAmount,
-                            { color: isOverBudget ? COLORS.status.danger : COLORS.status.success }
+                            { color: isOverBudget ? colors.status.danger : colors.status.success }
                         ]}
                     >
                         {formatMoney(remaining)}
@@ -52,8 +54,8 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({
             </View>
 
             {isOverBudget && (
-                <View style={styles.warningContainer}>
-                    <Text style={styles.warningText}>Over Budget!</Text>
+                <View style={[styles.warningContainer, { backgroundColor: colors.status.danger + '20' }]}>
+                    <Text style={[styles.warningText, { color: colors.status.danger }]}>Over Budget!</Text>
                 </View>
             )}
         </Card>
@@ -61,26 +63,23 @@ export const BudgetSummary: React.FC<BudgetSummaryProps> = ({
 };
 
 const styles = StyleSheet.create({
-    card: {
-        // Custom style if needed
-    },
+    card: {},
     header: {
-        marginBottom: SPACING.s,
+        marginBottom: 8,
     },
     label: {
-        fontSize: 14,
-        color: COLORS.text.secondary,
+        fontSize: 13,
         marginBottom: 4,
+        fontWeight: '500',
     },
     budgetAmount: {
-        fontSize: 32,
-        fontWeight: '800', // Premium feel
-        color: COLORS.text.primary,
+        fontSize: 34,
+        fontWeight: '700',
+        letterSpacing: 0.37, // iOS large title
     },
     divider: {
         height: 1,
-        backgroundColor: COLORS.border,
-        marginVertical: SPACING.m,
+        marginVertical: 16,
     },
     row: {
         flexDirection: 'row',
@@ -90,31 +89,28 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     subLabel: {
-        fontSize: 12,
-        color: COLORS.text.tertiary,
+        fontSize: 11,
         marginBottom: 2,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
+        fontWeight: '600',
     },
     plannedAmount: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '600',
-        color: COLORS.text.primary,
     },
     remainingAmount: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '700',
     },
     warningContainer: {
-        marginTop: SPACING.m,
-        backgroundColor: COLORS.status.danger + '20', // transparent red
-        padding: SPACING.s,
-        borderRadius: SPACING.s,
+        marginTop: 16,
+        padding: 10,
+        borderRadius: 10,
         alignItems: 'center',
     },
     warningText: {
-        color: COLORS.status.danger,
-        fontWeight: '700',
+        fontWeight: '600',
         fontSize: 14,
     },
 });

@@ -1,4 +1,4 @@
-import { COLORS, RADIUS } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -23,29 +23,33 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
     onSwipeRight,
     leftLabel = 'Action',
     rightLabel = 'Action',
-    leftColor = COLORS.status.success,
-    rightColor = COLORS.status.danger,
+    leftColor,
+    rightColor,
     leftIcon = 'cart',
     rightIcon = 'close-circle',
     enabled = true
 }) => {
+    const colors = useThemeColors();
 
-    const renderLeftActions = (progress: any, dragX: any) => {
+    const resolvedLeftColor = leftColor || colors.status.success;
+    const resolvedRightColor = rightColor || colors.status.danger;
+
+    const renderLeftActions = () => {
         if (!onSwipeLeft) return null;
         return (
-            <View style={[styles.actionContainer, { backgroundColor: leftColor, justifyContent: 'flex-start' }]}>
-                <Ionicons name={leftIcon} size={24} color="white" style={{ marginLeft: 20 }} />
-                <Text style={[styles.actionText, { marginLeft: 10 }]}>{leftLabel}</Text>
+            <View style={[styles.actionContainer, { backgroundColor: resolvedLeftColor, justifyContent: 'flex-start' }]}>
+                <Ionicons name={leftIcon} size={22} color="white" style={{ marginLeft: 20 }} />
+                <Text style={[styles.actionText, { marginLeft: 8 }]}>{leftLabel}</Text>
             </View>
         );
     };
 
-    const renderRightActions = (progress: any, dragX: any) => {
+    const renderRightActions = () => {
         if (!onSwipeRight) return null;
         return (
-            <View style={[styles.actionContainer, { backgroundColor: rightColor, justifyContent: 'flex-end' }]}>
-                <Text style={[styles.actionText, { marginRight: 10 }]}>{rightLabel}</Text>
-                <Ionicons name={rightIcon} size={24} color="white" style={{ marginRight: 20 }} />
+            <View style={[styles.actionContainer, { backgroundColor: resolvedRightColor, justifyContent: 'flex-end' }]}>
+                <Text style={[styles.actionText, { marginRight: 8 }]}>{rightLabel}</Text>
+                <Ionicons name={rightIcon} size={22} color="white" style={{ marginRight: 20 }} />
             </View>
         );
     };
@@ -58,6 +62,8 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
             onSwipeableRightOpen={onSwipeRight}
             enabled={enabled}
             containerStyle={styles.container}
+            friction={2}
+            overshootFriction={8}
         >
             {children}
         </Swipeable>
@@ -67,7 +73,7 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
 const styles = StyleSheet.create({
     container: {
         marginBottom: 2,
-        borderRadius: RADIUS.m,
+        borderRadius: 12,
         overflow: 'hidden',
         backgroundColor: 'transparent',
     },
@@ -79,8 +85,7 @@ const styles = StyleSheet.create({
     },
     actionText: {
         color: 'white',
-        fontWeight: '700',
-        fontSize: 14,
-        textTransform: 'uppercase',
+        fontWeight: '600',
+        fontSize: 15,
     }
 });

@@ -1,6 +1,6 @@
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useStore } from '@/src/store/useStore';
-import { COLORS, RADIUS, SPACING } from '@/src/theme';
+import { useThemeColors } from '@/src/theme';
 import { Currency } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -10,6 +10,7 @@ import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
+    const colors = useThemeColors();
     const { settings, setSettings, lists, importData, resetStore } = useStore();
 
     const currencies: { code: Currency; label: string; symbol: string }[] = [
@@ -87,30 +88,33 @@ export default function SettingsScreen() {
 
     return (
         <ScreenWrapper style={styles.container}>
-            <Text style={styles.title}>Settings</Text>
+            <Text style={[styles.title, { color: colors.text.primary }]}>Settings</Text>
 
             {/* Currency Selection */}
             <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Currency</Text>
-                <View style={styles.card}>
+                <Text style={[styles.sectionLabel, { color: colors.text.tertiary }]}>Currency</Text>
+                <View style={[styles.card, { backgroundColor: colors.surface }]}>
                     <View style={styles.currencyRow}>
                         {currencies.map((c) => (
                             <TouchableOpacity
                                 key={c.code}
                                 style={[
                                     styles.currencyOption,
-                                    settings.defaultCurrency === c.code && styles.currencyOptionActive
+                                    { backgroundColor: colors.system.systemGray6 },
+                                    settings.defaultCurrency === c.code && { backgroundColor: colors.primary }
                                 ]}
                                 onPress={() => setSettings({ ...settings, defaultCurrency: c.code })}
                                 activeOpacity={0.7}
                             >
                                 <Text style={[
                                     styles.currencySymbol,
-                                    settings.defaultCurrency === c.code && styles.currencySymbolActive
+                                    { color: colors.text.secondary },
+                                    settings.defaultCurrency === c.code && { color: colors.text.inverse }
                                 ]}>{c.symbol}</Text>
                                 <Text style={[
                                     styles.currencyLabel,
-                                    settings.defaultCurrency === c.code && styles.currencyLabelActive
+                                    { color: colors.text.tertiary },
+                                    settings.defaultCurrency === c.code && { color: colors.text.inverse }
                                 ]}>{c.label}</Text>
                             </TouchableOpacity>
                         ))}
@@ -120,147 +124,129 @@ export default function SettingsScreen() {
 
             {/* Data Management */}
             <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Data</Text>
-                <View style={styles.card}>
+                <Text style={[styles.sectionLabel, { color: colors.text.tertiary }]}>Data</Text>
+                <View style={[styles.card, { backgroundColor: colors.surface }]}>
                     <TouchableOpacity style={styles.menuItem} onPress={handleExport} activeOpacity={0.6}>
                         <View style={styles.menuItemLeft}>
-                            <View style={[styles.iconCircle, { backgroundColor: COLORS.primary + '20' }]}>
-                                <Ionicons name="cloud-upload-outline" size={18} color={COLORS.primary} />
+                            <View style={[styles.iconCircle, { backgroundColor: colors.primary + '20' }]}>
+                                <Ionicons name="cloud-upload-outline" size={18} color={colors.primary} />
                             </View>
-                            <Text style={styles.menuItemText}>Export Backup</Text>
+                            <Text style={[styles.menuItemText, { color: colors.text.primary }]}>Export Backup</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={COLORS.text.tertiary} />
+                        <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
                     </TouchableOpacity>
 
-                    <View style={styles.separator} />
+                    <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
                     <TouchableOpacity style={styles.menuItem} onPress={handleImport} activeOpacity={0.6}>
                         <View style={styles.menuItemLeft}>
-                            <View style={[styles.iconCircle, { backgroundColor: COLORS.status.success + '20' }]}>
-                                <Ionicons name="cloud-download-outline" size={18} color={COLORS.status.success} />
+                            <View style={[styles.iconCircle, { backgroundColor: colors.status.success + '20' }]}>
+                                <Ionicons name="cloud-download-outline" size={18} color={colors.status.success} />
                             </View>
-                            <Text style={styles.menuItemText}>Import Backup</Text>
+                            <Text style={[styles.menuItemText, { color: colors.text.primary }]}>Import Backup</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={COLORS.text.tertiary} />
+                        <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
                     </TouchableOpacity>
                 </View>
             </View>
 
             {/* Danger Zone */}
             <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Reset</Text>
-                <View style={styles.card}>
+                <Text style={[styles.sectionLabel, { color: colors.text.tertiary }]}>Reset</Text>
+                <View style={[styles.card, { backgroundColor: colors.surface }]}>
                     <TouchableOpacity style={styles.menuItem} onPress={handleReset} activeOpacity={0.6}>
                         <View style={styles.menuItemLeft}>
-                            <View style={[styles.iconCircle, { backgroundColor: COLORS.status.danger + '20' }]}>
-                                <Ionicons name="trash-outline" size={18} color={COLORS.status.danger} />
+                            <View style={[styles.iconCircle, { backgroundColor: colors.status.danger + '20' }]}>
+                                <Ionicons name="trash-outline" size={18} color={colors.status.danger} />
                             </View>
-                            <Text style={[styles.menuItemText, { color: COLORS.status.danger }]}>Delete All Data</Text>
+                            <Text style={[styles.menuItemText, { color: colors.status.danger }]}>Delete All Data</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={COLORS.text.tertiary} />
+                        <Ionicons name="chevron-forward" size={18} color={colors.text.tertiary} />
                     </TouchableOpacity>
                 </View>
             </View>
 
             <View style={{ flex: 1 }} />
-            <Text style={styles.footer}>Budgy v1.0.0</Text>
+            <Text style={[styles.footer, { color: colors.text.tertiary }]}>Budgy v1.0.0</Text>
         </ScreenWrapper>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        padding: SPACING.m,
+        padding: 16,
     },
     title: {
-        fontSize: 28,
-        fontWeight: '800',
-        color: COLORS.text.primary,
-        marginBottom: SPACING.xl,
-        letterSpacing: -0.5,
+        fontSize: 34,
+        fontWeight: '700',
+        marginBottom: 32,
+        letterSpacing: 0.37,
     },
     section: {
-        marginBottom: SPACING.l,
+        marginBottom: 24,
     },
     sectionLabel: {
         fontSize: 13,
         fontWeight: '600',
-        color: COLORS.text.tertiary,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
-        marginBottom: SPACING.s,
-        marginLeft: SPACING.xs,
+        marginBottom: 8,
+        marginLeft: 4,
     },
     card: {
-        backgroundColor: COLORS.surface,
-        borderRadius: RADIUS.l,
+        borderRadius: 12,
         overflow: 'hidden',
     },
     currencyRow: {
         flexDirection: 'row',
-        padding: SPACING.s,
-        gap: SPACING.s,
+        padding: 8,
+        gap: 8,
     },
     currencyOption: {
         flex: 1,
         alignItems: 'center',
-        paddingVertical: SPACING.m,
-        borderRadius: RADIUS.m,
-        backgroundColor: COLORS.background,
-    },
-    currencyOptionActive: {
-        backgroundColor: COLORS.primary,
+        paddingVertical: 16,
+        borderRadius: 10,
     },
     currencySymbol: {
         fontSize: 22,
         fontWeight: '700',
-        color: COLORS.text.secondary,
         marginBottom: 4,
     },
-    currencySymbolActive: {
-        color: COLORS.text.inverse,
-    },
     currencyLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: COLORS.text.tertiary,
-    },
-    currencyLabelActive: {
-        color: COLORS.text.inverse,
+        fontSize: 13,
+        fontWeight: '500',
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: SPACING.m,
-        paddingHorizontal: SPACING.m,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
     },
     menuItemLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: SPACING.m,
+        gap: 14,
     },
     iconCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
     },
     menuItemText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: COLORS.text.primary,
+        fontSize: 17,
+        fontWeight: '400',
     },
     separator: {
         height: 1,
-        backgroundColor: COLORS.border,
-        marginLeft: SPACING.m + 36 + SPACING.m,
+        marginLeft: 62,
     },
     footer: {
         textAlign: 'center',
-        fontSize: 12,
-        color: COLORS.text.tertiary,
-        marginBottom: SPACING.m,
+        fontSize: 13,
+        marginBottom: 16,
     },
 });
