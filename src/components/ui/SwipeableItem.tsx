@@ -1,4 +1,4 @@
-import { COLORS, RADIUS, SPACING } from '@/src/theme';
+import { COLORS, RADIUS } from '@/src/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -12,6 +12,8 @@ interface SwipeableItemProps {
     rightLabel?: string;
     leftColor?: string;
     rightColor?: string;
+    leftIcon?: keyof typeof Ionicons.glyphMap;
+    rightIcon?: keyof typeof Ionicons.glyphMap;
     enabled?: boolean;
 }
 
@@ -23,6 +25,8 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
     rightLabel = 'Action',
     leftColor = COLORS.status.success,
     rightColor = COLORS.status.danger,
+    leftIcon = 'cart',
+    rightIcon = 'close-circle',
     enabled = true
 }) => {
 
@@ -30,7 +34,7 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
         if (!onSwipeLeft) return null;
         return (
             <View style={[styles.actionContainer, { backgroundColor: leftColor, justifyContent: 'flex-start' }]}>
-                <Ionicons name="cart" size={24} color="white" style={{ marginLeft: 20 }} />
+                <Ionicons name={leftIcon} size={24} color="white" style={{ marginLeft: 20 }} />
                 <Text style={[styles.actionText, { marginLeft: 10 }]}>{leftLabel}</Text>
             </View>
         );
@@ -41,7 +45,7 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
         return (
             <View style={[styles.actionContainer, { backgroundColor: rightColor, justifyContent: 'flex-end' }]}>
                 <Text style={[styles.actionText, { marginRight: 10 }]}>{rightLabel}</Text>
-                <Ionicons name="close-circle" size={24} color="white" style={{ marginRight: 20 }} />
+                <Ionicons name={rightIcon} size={24} color="white" style={{ marginRight: 20 }} />
             </View>
         );
     };
@@ -62,7 +66,7 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: SPACING.m,
+        marginBottom: 2,
         borderRadius: RADIUS.m,
         overflow: 'hidden',
         backgroundColor: 'transparent',

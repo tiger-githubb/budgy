@@ -1,29 +1,35 @@
 import { COLORS, SPACING } from '@/src/theme';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Platform, SafeAreaView, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ScreenWrapperProps {
     children: React.ReactNode;
     style?: StyleProp<ViewStyle>;
+    backgroundColor?: string;
 }
 
-export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({ children, style }) => {
+export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
+    children,
+    style,
+    backgroundColor = COLORS.background
+}) => {
+    const insets = useSafeAreaInsets();
+
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
             <StatusBar style="dark" />
-            <View style={[styles.content, style]}>
+            <View style={[styles.content, { paddingBottom: insets.bottom }, style]}>
                 {children}
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
-        paddingTop: Platform.OS === 'android' ? 30 : 0, // Simple fix for Android status bar
     },
     content: {
         flex: 1,

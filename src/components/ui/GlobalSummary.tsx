@@ -21,7 +21,9 @@ export const GlobalSummary: React.FC<GlobalSummaryProps> = ({
         return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(amount);
     };
 
+    const remaining = totalBudget - totalSpent;
     const percentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+    const isOverBudget = remaining < 0;
 
     return (
         <View style={styles.container}>
@@ -38,20 +40,23 @@ export const GlobalSummary: React.FC<GlobalSummaryProps> = ({
             <View style={styles.divider} />
 
             <View style={styles.row}>
-                <View style={styles.statItem}>
+                <View style={[styles.statItem, { flex: 1 }]}>
                     <Text style={styles.subLabel}>Spent</Text>
                     <Text style={styles.subValue}>
                         {formatMoney(totalSpent)}
                     </Text>
                 </View>
-                <View style={styles.statItem}>
-                    <Text style={styles.subLabel}>Lists</Text>
-                    <Text style={styles.subValue}>{activeCount}</Text>
-                </View>
-                <View style={styles.statItem}>
-                    <Text style={styles.subLabel}>Status</Text>
-                    <Text style={[styles.subValue, { color: percentage > 100 ? COLORS.status.danger : COLORS.primary }]}>
-                        {percentage > 100 ? 'Over' : 'Good'}
+
+                {/* Vertical Divider */}
+                <View style={{ width: 1, backgroundColor: '#27272A', marginRight: SPACING.l }} />
+
+                <View style={[styles.statItem, { flex: 1, alignItems: 'flex-end' }]}>
+                    <Text style={styles.subLabel}>Remaining</Text>
+                    <Text style={[
+                        styles.subValue,
+                        { color: isOverBudget ? COLORS.status.danger : COLORS.status.success }
+                    ]}>
+                        {formatMoney(remaining)}
                     </Text>
                 </View>
             </View>

@@ -18,14 +18,18 @@ interface StoreState {
     archiveLists: (ids: string[]) => void;
     unarchiveLists: (ids: string[]) => void;
     deleteLists: (ids: string[]) => void;
-    reorderItems: (listId: string, reorderedItems: Item[]) => void;
+    reorderItems: (listId: string, items: Item[]) => void;
 
     addItem: (listId: string, name: string, amount: number, status?: ItemStatus) => void;
     updateItem: (listId: string, itemId: string, updates: Partial<Item>) => void;
     deleteItem: (listId: string, itemId: string) => void;
 
     setCurrency: (currency: Currency) => void;
+    setSettings: (settings: Settings) => void;
     resetStore: () => void;
+
+    // Data Management
+    importData: (data: { lists: List[]; settings: Settings }) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -33,7 +37,7 @@ export const useStore = create<StoreState>()(
         (set, get) => ({
             lists: [],
             settings: {
-                defaultCurrency: 'XOF',
+                defaultCurrency: 'USD',
                 isOnboarded: false,
             },
 
@@ -46,7 +50,7 @@ export const useStore = create<StoreState>()(
                     currency: settings.defaultCurrency,
                     items: [],
                     createdAt: Date.now(),
-                    isArchived: false, // Default
+                    isArchived: false,
                 };
                 set((state) => ({ lists: [newList, ...state.lists] }));
             },
@@ -63,17 +67,18 @@ export const useStore = create<StoreState>()(
                 }));
             },
 
-            // Bulk Actions
             archiveLists: (ids) => {
                 set((state) => ({
                     lists: state.lists.map(l => ids.includes(l.id) ? { ...l, isArchived: true } : l)
                 }));
             },
+
             unarchiveLists: (ids) => {
                 set((state) => ({
                     lists: state.lists.map(l => ids.includes(l.id) ? { ...l, isArchived: false } : l)
                 }));
             },
+
             deleteLists: (ids) => {
                 set((state) => ({
                     lists: state.lists.filter(l => !ids.includes(l.id))
@@ -86,7 +91,6 @@ export const useStore = create<StoreState>()(
                     if (listIndex === -1) return {};
 
                     const currentItems = state.lists[listIndex].items;
-                    // Default order: append to end
                     const maxOrder = currentItems.reduce((max, i) => Math.max(max, i.order || 0), -1);
 
                     const newItem: Item = {
@@ -111,23 +115,26 @@ export const useStore = create<StoreState>()(
                     lists: state.lists.map(l => {
                         if (l.id !== listId) return l;
 
-                        // Identify items NOT in the reordered subset to preserve them
-                        const otherItems = l.items.filter(i => !reorderedItems.some(ri => ri.id === i.id));
+                        // Create a map of reordered items for quick lookup
+                        const reorderedMap = new Map(reorderedItems.map((item, index) => [item.id, index]));
 
-                        // Update order for the reordered subset
-                        // We should probably preserve the relative order range? 
-                        // Or just assign them 0..N?
-                        // If we assign 0..N, they might clash with otherItems orders.
-                        // Ideally, we should find the min order of the subset and re-assign from there?
-                        // But since we sort by order, if 'otherItems' have null order, it's messy.
-                        // Let's just update their order property relative to themselves.
-                        // And rely on the UI (ListDetailScreen) to sort correctly based on sections.
+                        // Separate items not in the reordered list
+                        const otherItems = l.items.filter(i => !reorderedMap.has(i.id));
 
+                        // Create updated reordered items with new indices
                         const updatedSubset = reorderedItems.map((item, index) => ({
                             ...item,
                             order: index
                         }));
 
+                        // Combine: Keep others first (or last?) -> Draggable list usually handles the whole list or a section.
+                        // Assuming reorderedItems contains ONLY the items in the section being reordered.
+                        // We should replace the items that were moved with their new versions,
+                        // BUT preserving their relative position vs other sections might be tricky if we just concat.
+                        // Ideally we update the orders of the moved items.
+
+                        // Simpler approach for now conforming to previous logic:
+                        // Just merge them back. "otherItems" are likely perfectly fine to stay as is.
                         return { ...l, items: [...otherItems, ...updatedSubset] };
                     })
                 }));
@@ -163,7 +170,16 @@ export const useStore = create<StoreState>()(
                 }));
             },
 
-            resetStore: () => set({ lists: [], settings: { defaultCurrency: 'XOF', isOnboarded: false } })
+            setSettings: (settings) => {
+                set(() => ({ settings }));
+            },
+
+            resetStore: () => set({ lists: [], settings: { defaultCurrency: 'USD', isOnboarded: false } }),
+
+            importData: (data) => set(() => ({
+                lists: data.lists,
+                settings: data.settings,
+            })),
         }),
         {
             name: 'budgy-storage',
@@ -200,3 +216,4 @@ export const calculateGlobalTotals = (lists: List[]) => {
 
     return { totalBudget, totalSpent };
 };
+

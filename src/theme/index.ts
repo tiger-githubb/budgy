@@ -6,6 +6,7 @@ export const COLORS = {
 
     background: '#FFFFFF', // White
     surface: '#FFFFFF',
+    surfaceSecondary: '#f9f9fb', // New rounded background
     surfaceHighlight: '#FAFAFA', // Very light grey for touch states
 
     text: {
@@ -22,7 +23,7 @@ export const COLORS = {
         info: '#3B82F6', // Blue 500
     },
 
-    border: '#E4E4E7', // Zinc 200 - Very subtle/elegant border
+    border: '#F4F4F5', // Zinc 100 - Even lighter, barely visible border
 };
 
 export const SPACING = {

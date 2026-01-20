@@ -2,11 +2,11 @@ import { Button } from '@/src/components/ui/Button';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useStore } from '@/src/store/useStore';
-import { SPACING } from '@/src/theme';
+import { COLORS, SPACING } from '@/src/theme';
 import { ItemStatus } from '@/src/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 
 export default function ItemFormScreen() {
     const router = useRouter();
@@ -17,17 +17,45 @@ export default function ItemFormScreen() {
     const list = lists.find(l => l.id === listId);
     const existingItem = list?.items.find(i => i.id === itemId);
     const isEditing = !!existingItem;
+    const currency = list?.currency || '€'; // Fallback
 
     const [name, setName] = useState(existingItem?.name || '');
-    const [amount, setAmount] = useState(existingItem?.amount?.toString() || '');
+    // Raw value for calculation, formatted for display
+    const [amountRaw, setAmountRaw] = useState(existingItem?.amount?.toString() || '');
+    const [amountDisplay, setAmountDisplay] = useState('');
     const [status, setStatus] = useState<ItemStatus>(existingItem?.status || 'PLANNED');
     const [errors, setErrors] = useState<{ name?: string; amount?: string }>({});
+
+    // Init formatted value
+    React.useEffect(() => {
+        if (amountRaw) {
+            handleAmountChange(amountRaw);
+        }
+    }, []);
+
+    const formatNumberWithSpaces = (numStr: string) => {
+        const cleaned = numStr.replace(/[^0-9.]/g, ''); // Allow decimal point if needed, but user seems to use integers mostly. Sticking to simple integers for consistency with current code unless decimals requested? The list form used integer logic `replace(/[^0-9]/g, '')`. I'll stick to that for consistency.
+        const integerCleaned = numStr.replace(/[^0-9]/g, '');
+        if (!integerCleaned) return '';
+        return integerCleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    };
+
+    const handleAmountChange = (text: string) => {
+        const raw = text.replace(/\s/g, '');
+        if (!isNaN(Number(raw))) {
+            setAmountRaw(raw);
+            setAmountDisplay(formatNumberWithSpaces(raw));
+        } else if (text === '') {
+            setAmountRaw('');
+            setAmountDisplay('');
+        }
+    };
 
     const validate = () => {
         const newErrors: { name?: string; amount?: string } = {};
         if (!name.trim()) newErrors.name = 'Name is required';
-        if (!amount.trim()) newErrors.amount = 'Amount is required';
-        else if (isNaN(Number(amount)) || Number(amount) <= 0) newErrors.amount = 'Amount must be greater than 0';
+        if (!amountRaw.trim()) newErrors.amount = 'Amount is required';
+        else if (isNaN(Number(amountRaw)) || Number(amountRaw) <= 0) newErrors.amount = 'Amount must be greater than 0';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -37,24 +65,13 @@ export default function ItemFormScreen() {
         if (!validate() || !list) return;
 
         if (isEditing && existingItem) {
-            updateItem(list.id, existingItem.id, { name, amount: Number(amount), status });
+            // Keep existing status if editing
+            updateItem(list.id, existingItem.id, { name, amount: Number(amountRaw), status: existingItem.status });
         } else {
-            addItem(list.id, name, Number(amount), status);
+            // Default to PLANNED for new items
+            addItem(list.id, name, Number(amountRaw), 'PLANNED');
         }
         router.back();
-    };
-
-    const handleDelete = () => {
-        if (!list || !existingItem) return;
-        Alert.alert("Delete Item", "Are you sure?", [
-            { text: "Cancel", style: "cancel" },
-            {
-                text: "Delete", style: "destructive", onPress: () => {
-                    deleteItem(list.id, existingItem.id);
-                    router.back();
-                }
-            }
-        ]);
     };
 
     return (
@@ -74,52 +91,27 @@ export default function ItemFormScreen() {
                             autoFocus={!isEditing}
                         />
 
-                        <Input
-                            label="Amount"
-                            placeholder="0"
-                            value={amount}
-                            onChangeText={setAmount}
-                            keyboardType="numeric"
-                            error={errors.amount}
-                        />
-
-                        {isEditing && (
-                            <View style={styles.statusButtons}>
-                                {(['PLANNED', 'PURCHASED', 'CANCELLED'] as const).map(s => (
-                                    <Button
-                                        key={s}
-                                        title={s}
-                                        variant={status === s ? 'primary' : 'outline'}
-                                        onPress={() => setStatus(s)}
-                                        style={{ flex: 1, marginHorizontal: 2 }}
-                                        textStyle={{ fontSize: 10 }}
-                                    />
-                                ))}
-                            </View>
-                        )}
+                        <View>
+                            <Input
+                                label="Amount"
+                                placeholder="0"
+                                value={amountDisplay}
+                                onChangeText={handleAmountChange}
+                                keyboardType="numeric"
+                                error={errors.amount}
+                            />
+                            {amountDisplay ? (
+                                <Text style={styles.currencySuffix}>{currency}</Text>
+                            ) : null}
+                        </View>
 
                         <View style={styles.actions}>
                             <Button
-                                title="Cancel"
-                                variant="ghost"
-                                onPress={() => router.back()}
-                                style={{ flex: 1, marginRight: SPACING.s }}
-                            />
-                            <Button
                                 title={isEditing ? "Update Item" : "Add Item"}
                                 onPress={handleSave}
-                                style={{ flex: 1, marginLeft: SPACING.s }}
+                                style={{ width: '100%' }}
                             />
                         </View>
-
-                        {isEditing && (
-                            <Button
-                                title="Delete Item"
-                                variant="danger"
-                                onPress={handleDelete}
-                                style={{ marginTop: SPACING.m }}
-                            />
-                        )}
                     </View>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
@@ -134,13 +126,17 @@ const styles = StyleSheet.create({
     form: {
         flex: 1,
         paddingTop: SPACING.xl,
-    },
-    statusButtons: {
-        flexDirection: 'row',
-        marginBottom: SPACING.m,
+        gap: SPACING.l,
     },
     actions: {
-        flexDirection: 'row',
-        marginTop: SPACING.l,
+        marginTop: SPACING.m,
+    },
+    currencySuffix: {
+        position: 'absolute',
+        right: SPACING.m,
+        top: 38,
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.text.tertiary,
     },
 });

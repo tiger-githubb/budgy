@@ -7,8 +7,8 @@ import { COLORS, RADIUS, SPACING } from '@/src/theme';
 import { List } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, BackHandler, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 
 export default function HomeScreen() {
@@ -50,14 +50,33 @@ export default function HomeScreen() {
     }
   };
 
+  const exitSelectionMode = () => {
+    setIsSelectionMode(false);
+    setSelectedIds([]);
+  };
+
+  // Handle hardware back button in selection mode
+  useEffect(() => {
+    const onBackPress = () => {
+      if (isSelectionMode) {
+        exitSelectionMode();
+        return true; // Prevent default behavior (exit app)
+      }
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+    return () => subscription.remove();
+  }, [isSelectionMode]);
+
   const handleBulkArchive = () => {
     Alert.alert("Archive", `Archive ${selectedIds.length} list(s)?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Archive", onPress: () => {
           archiveLists(selectedIds);
-          setIsSelectionMode(false);
-          setSelectedIds([]);
+          exitSelectionMode();
         }
       }
     ]);
@@ -69,16 +88,10 @@ export default function HomeScreen() {
       {
         text: "Delete", style: "destructive", onPress: () => {
           deleteLists(selectedIds);
-          setIsSelectionMode(false);
-          setSelectedIds([]);
+          exitSelectionMode();
         }
       }
     ]);
-  };
-
-  const exitSelectionMode = () => {
-    setIsSelectionMode(false);
-    setSelectedIds([]);
   };
 
   const renderItem = ({ item, index }: { item: List, index: number }) => {
@@ -127,6 +140,18 @@ export default function HomeScreen() {
     );
   };
 
+  const ListFooter = () => (
+    <View style={styles.footerContainer}>
+      <TouchableOpacity
+        style={styles.archiveButton}
+        onPress={() => router.push('/archived')}
+      >
+        <Text style={styles.archiveButtonText}>View Archived Lists</Text>
+        <Ionicons name="chevron-forward" size={16} color={COLORS.text.secondary} />
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <ScreenWrapper>
       <View style={styles.header}>
@@ -160,7 +185,7 @@ export default function HomeScreen() {
       </View>
 
       {!isSelectionMode && (
-        <View style={{ marginBottom: SPACING.l }}>
+        <View style={{ marginBottom: SPACING.s }}>
           <GlobalSummary
             totalBudget={totalBudget}
             totalSpent={totalSpent}
@@ -170,32 +195,33 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {!isSelectionMode && activeLists.length > 0 && (
-        <Text style={styles.sectionTitle}>My Budgets</Text>
-      )}
+      {/* Lists Section Container */}
+      <View style={styles.listsContainer}>
+        {!isSelectionMode && activeLists.length > 0 && (
+          <Text style={styles.sectionTitle}>My Budgets</Text>
+        )}
 
-      {activeLists.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No active budgets.</Text>
-          <Button title="Create Budget" onPress={handleCreate} style={{ marginTop: SPACING.l }} />
-        </View>
-      ) : (
-        <FlatList
-          data={activeLists}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+        {activeLists.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="file-tray-outline" size={48} color={COLORS.text.tertiary} />
+            </View>
+            <Text style={styles.emptyText}>No active budgets.</Text>
+            <Button title="Create Budget" onPress={handleCreate} style={{ marginTop: SPACING.l }} />
+            <ListFooter />
+          </View>
+        ) : (
+          <FlatList
+            data={activeLists}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={ListFooter}
+          />
+        )}
+      </View>
 
-      {!isSelectionMode && (
-        <View style={styles.footerLink}>
-          <TouchableOpacity onPress={() => router.push('/archived')}>
-            <Text style={styles.linkText}>View Archived Lists</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </ScreenWrapper>
   );
 }
@@ -213,7 +239,7 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 28,
     fontWeight: '900',
-    color: COLORS.text.secondary, // Subtle "Budgy" branding or primary
+    color: COLORS.text.secondary,
     letterSpacing: -1,
   },
   createButton: {
@@ -237,9 +263,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  listsContainer: {
+    flex: 1,
+    backgroundColor: COLORS.surfaceSecondary, // #f9f9fb
+    borderRadius: RADIUS.l,
+    padding: SPACING.m,
+  },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '800', // Bold section title
+    fontWeight: '800',
     color: COLORS.text.primary,
     marginBottom: SPACING.m,
     letterSpacing: -0.5,
@@ -288,6 +320,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 50,
   },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.m,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
@@ -311,17 +354,23 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  footerLink: {
-    position: 'absolute',
-    bottom: SPACING.l,
-    left: 0,
-    right: 0,
+  footerContainer: {
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.xl,
     alignItems: 'center',
   },
-  linkText: {
-    color: COLORS.text.tertiary,
-    textDecorationLine: 'underline',
-    fontWeight: '500',
-    fontSize: 13,
+  archiveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E4E4E7', // Zinc 200
+    paddingVertical: SPACING.s,
+    paddingHorizontal: SPACING.l,
+    borderRadius: RADIUS.full,
+    gap: SPACING.xs,
+  },
+  archiveButtonText: {
+    color: COLORS.text.secondary,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

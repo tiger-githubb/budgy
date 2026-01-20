@@ -5,7 +5,7 @@ import { calculateListTotals, useStore } from '@/src/store/useStore';
 import { COLORS, RADIUS, SPACING } from '@/src/theme';
 import { Item } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NestableDraggableFlatList, NestableScrollContainer, ScaleDecorator } from 'react-native-draggable-flatlist';
@@ -66,59 +66,75 @@ export default function ListDetailScreen() {
     };
 
     const onItemSwipeLeft = (item: Item) => {
-        // Cancel
-        if (item.status !== 'CANCELLED') {
-            updateItem(list.id, item.id, { status: 'CANCELLED' });
+        // Swipe Left: CANCEL or RESTORE
+        if (item.status === 'CANCELLED') {
+            // Restore to Planned
+            updateItem(list.id, item.id, { status: 'PLANNED' });
         } else {
-            // If already cancelled, maybe delete? User said "No confirmation necessary" for cancel.
-            // Let's assume swipe left on cancelled does nothing or deletes?
-            // "pour cancel un elements je veux qu'on le slide vers la gauche"
-            // "pour les canced un swip a droite pour les ramener"
-            // Let's allow Delete on Cancelled items via Swipe Left?
-            Alert.alert("Delete Item", "Permanently delete?", [
-                { text: "Cancel" },
-                { text: "Delete", style: 'destructive', onPress: () => deleteItem(list.id, item.id) }
-            ]);
+            // Move to Cancelled
+            updateItem(list.id, item.id, { status: 'CANCELLED' });
         }
     };
 
     const onItemSwipeRight = (item: Item) => {
-        // Purchase or Restore
+        // Swipe Right: DELETE
+        Alert.alert("Delete Item", "Permanently delete?", [
+            { text: "Cancel" },
+            { text: "Delete", style: 'destructive', onPress: () => deleteItem(list.id, item.id) }
+        ]);
+    };
+
+    const toggleStatus = (item: Item) => {
         if (item.status === 'PLANNED') {
             updateItem(list.id, item.id, { status: 'PURCHASED' });
         } else if (item.status === 'PURCHASED') {
-            updateItem(list.id, item.id, { status: 'PLANNED' }); // Undo purchase
-        } else if (item.status === 'CANCELLED') {
-            updateItem(list.id, item.id, { status: 'PLANNED' }); // Restore
+            updateItem(list.id, item.id, { status: 'PLANNED' });
         }
     };
 
+    const handleEditItem = (item: Item) => {
+        router.push(`/item/form?listId=${list.id}&itemId=${item.id}`);
+    };
+
     const renderItemCard = ({ item, drag, isActive }: { item: Item, drag: () => void, isActive: boolean }) => {
-        // Determine interactions based on status
         const isCancelled = item.status === 'CANCELLED';
         const isPurchased = item.status === 'PURCHASED';
 
         return (
-            <ScaleDecorator>
-                <TouchableOpacity
-                    onLongPress={drag}
-                    disabled={isActive}
-                    activeOpacity={1}
+            <ScaleDecorator activeScale={1}>
+                <SwipeableItem
+                    onSwipeLeft={() => onItemSwipeLeft(item)}
+                    onSwipeRight={() => onItemSwipeRight(item)}
+                    leftLabel={isCancelled ? "Restore" : "Cancel"}
+                    rightLabel="Delete"
+                    leftColor={isCancelled ? COLORS.status.info : COLORS.text.tertiary}
+                    rightColor={COLORS.status.danger}
+                    leftIcon={isCancelled ? "arrow-undo" : "close-circle"}
+                    rightIcon="trash"
                 >
-                    <SwipeableItem
-                        onSwipeLeft={() => onItemSwipeLeft(item)}
-                        onSwipeRight={() => onItemSwipeRight(item)}
-                        leftLabel={isCancelled ? "Delete" : "Cancel"}
-                        rightLabel={isPurchased ? "Undo" : (isCancelled ? "Restore" : "Buy")}
-                        leftColor={isCancelled ? COLORS.status.danger : COLORS.text.tertiary} // Grey for cancel, Red for delete
-                        rightColor={isPurchased ? COLORS.status.warning : COLORS.status.success}
-                    >
-                        <View style={[
-                            styles.itemCard,
-                            isPurchased && styles.itemPurchased,
-                            isCancelled && styles.itemCancelled,
-                            isActive && styles.activeItem
-                        ]}>
+                    <View style={[
+                        styles.itemCard,
+                        isPurchased && styles.itemPurchased,
+                        isCancelled && styles.itemCancelled,
+                        isActive && styles.activeItem
+                    ]}>
+                        {/* Checkbox / Drag Handle */}
+                        <TouchableOpacity
+                            onPress={() => toggleStatus(item)}
+                            onLongPress={drag}
+                            style={styles.checkboxContainer}
+                            activeOpacity={0.6}
+                        >
+                            <View style={[styles.checkbox, isPurchased && styles.checkboxChecked]}>
+                                {isPurchased && <Ionicons name="checkmark" size={14} color="white" />}
+                            </View>
+                        </TouchableOpacity>
+
+                        {/* Editable Body */}
+                        <TouchableOpacity
+                            style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                            onPress={() => handleEditItem(item)}
+                        >
                             <View style={styles.itemInfo}>
                                 <Text style={[
                                     styles.itemName,
@@ -127,7 +143,6 @@ export default function ListDetailScreen() {
                                 ]}>
                                     {item.name}
                                 </Text>
-                                {/* Short date or details? */}
                             </View>
                             <Text style={[
                                 styles.itemAmount,
@@ -135,29 +150,35 @@ export default function ListDetailScreen() {
                             ]}>
                                 {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: list.currency }).format(item.amount)}
                             </Text>
-                        </View>
-                    </SwipeableItem>
-                </TouchableOpacity>
+                        </TouchableOpacity>
+                    </View>
+                </SwipeableItem>
             </ScaleDecorator>
         );
     };
 
     return (
         <ScreenWrapper>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.title} numberOfLines={1}>{list.name}</Text>
-                <View style={{ flexDirection: 'row' }}>
-                    <TouchableOpacity onPress={handleEditList} style={styles.headerBtn}>
-                        <Ionicons name="pencil" size={20} color={COLORS.text.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={handleDeleteList} style={styles.headerBtn}>
-                        <Ionicons name="trash-outline" size={20} color={COLORS.status.danger} />
-                    </TouchableOpacity>
-                </View>
-            </View>
+            <Stack.Screen
+                options={{
+                    headerShown: true,
+                    title: list.name,
+                    headerTintColor: COLORS.text.primary,
+                    headerShadowVisible: false, // Flat look
+                    headerStyle: { backgroundColor: COLORS.background },
+
+                    headerRight: () => (
+                        <View style={{ flexDirection: 'row', gap: SPACING.s }}>
+                            <TouchableOpacity onPress={handleEditList} style={styles.headerBtn}>
+                                <Ionicons name="pencil" size={20} color={COLORS.text.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleDeleteList} style={styles.headerBtn}>
+                                <Ionicons name="trash-outline" size={20} color={COLORS.status.danger} />
+                            </TouchableOpacity>
+                        </View>
+                    )
+                }}
+            />
 
             <BudgetSummary
                 budget={list.budget}
@@ -167,10 +188,12 @@ export default function ListDetailScreen() {
                 isOverBudget={isOverBudget}
             />
 
-            <View style={{ flex: 1 }}>
+            <View style={styles.listContainer}>
                 <NestableScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
 
                     {/* Planned Section */}
+                    {/* ... (rest of sections) */}
+                    {/* Reuse existing logic but check closing tags */}
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>To Buy ({plannedItems.length})</Text>
                         {!plannedItems.length && <Text style={styles.emptyFiles}>Nothing planned.</Text>}
@@ -227,24 +250,18 @@ export default function ListDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: SPACING.m,
-    },
     headerBtn: {
         padding: SPACING.s,
     },
-    title: {
+    listContainer: {
         flex: 1,
-        fontSize: 20,
-        fontWeight: '700',
-        textAlign: 'center',
-        color: COLORS.text.primary,
+        backgroundColor: COLORS.surfaceSecondary, // #f9f9fb
+        borderRadius: RADIUS.l,
+        padding: SPACING.m,
+        marginTop: SPACING.m,
     },
     sectionHeader: {
-        marginTop: SPACING.l,
+        marginTop: SPACING.m,
         marginBottom: SPACING.s,
         paddingHorizontal: SPACING.xs,
     },
@@ -311,11 +328,28 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         backgroundColor: COLORS.primary, // Gold
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'center', // Fix previous shadow warnings on Android if needed, but keeping simple
+        elevation: 5,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        elevation: 5, // Keep shadow for FAB as it floats
+    },
+    checkboxContainer: {
+        padding: SPACING.s,
+        marginRight: SPACING.s,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: COLORS.text.tertiary,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkboxChecked: {
+        backgroundColor: COLORS.status.success,
+        borderColor: COLORS.status.success,
     },
 });
