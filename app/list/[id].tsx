@@ -162,6 +162,7 @@ export default function ListDetailScreen() {
                 options={{
                     headerShown: true,
                     title: list.name,
+                    headerBackTitle: '',
                     headerTintColor: colors.text.primary,
                     headerShadowVisible: false,
                     headerStyle: { backgroundColor: colors.background },
