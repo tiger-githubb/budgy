@@ -1,133 +1,196 @@
 import { Button } from '@/src/components/ui/Button';
+import { FormContainer } from '@/src/components/ui/FormContainer';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useStore } from '@/src/store/useStore';
 import { useThemeColors } from '@/src/theme';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Currency } from '@/src/types';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 export default function ListFormScreen() {
+    const { id } = useLocalSearchParams<{ id?: string }>();
     const router = useRouter();
-    const params = useLocalSearchParams();
     const colors = useThemeColors();
-    const { addList, updateList, lists, settings } = useStore();
+    const { lists, settings, addList, updateList } = useStore();
 
-    const isEditing = !!params.id;
-    const existingList = isEditing ? lists.find(l => l.id === params.id) : null;
-    const currency = existingList?.currency || settings.defaultCurrency;
+    const isEditing = !!id;
+    const existingList = isEditing ? lists.find(l => l.id === id) : null;
 
-    const [name, setName] = useState(existingList?.name || '');
-    const [budgetRaw, setBudgetRaw] = useState(existingList?.budget?.toString() || '');
-    const [budgetDisplay, setBudgetDisplay] = useState('');
-    const [errors, setErrors] = useState<{ name?: string; budget?: string }>({});
+    const [name, setName] = useState('');
+    const [budget, setBudget] = useState('');
+    const [currency, setCurrency] = useState<Currency>(settings.defaultCurrency);
 
     useEffect(() => {
-        if (budgetRaw) {
-            handleBudgetChange(budgetRaw);
+        if (existingList) {
+            setName(existingList.name);
+            setBudget(existingList.budget.toString());
+            setCurrency(existingList.currency);
         }
-    }, []);
+    }, [existingList]);
 
-    const formatNumberWithSpaces = (numStr: string) => {
-        const cleaned = numStr.replace(/[^0-9]/g, '');
-        if (!cleaned) return '';
-        return cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    };
+    const currencies: { code: Currency; label: string; symbol: string }[] = [
+        { code: 'XOF', label: 'CFA', symbol: 'F' },
+        { code: 'EUR', label: 'Euro', symbol: '€' },
+        { code: 'USD', label: 'Dollar', symbol: '$' },
+    ];
 
-    const handleBudgetChange = (text: string) => {
-        const raw = text.replace(/\s/g, '');
-        if (!isNaN(Number(raw))) {
-            setBudgetRaw(raw);
-            setBudgetDisplay(formatNumberWithSpaces(raw));
-        } else if (text === '') {
-            setBudgetRaw('');
-            setBudgetDisplay('');
+    const handleSubmit = () => {
+        if (!name.trim()) {
+            Alert.alert('Erreur', 'Ajoute un nom pour le budget');
+            return;
         }
-    };
-
-    const validate = () => {
-        const newErrors: { name?: string; budget?: string } = {};
-        if (!name.trim()) newErrors.name = 'Name is required';
-        if (!budgetRaw.trim()) newErrors.budget = 'Budget is required';
-        else if (isNaN(Number(budgetRaw)) || Number(budgetRaw) <= 0) newErrors.budget = 'Budget must be greater than 0';
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSave = () => {
-        if (!validate()) return;
+        const parsedBudget = parseFloat(budget) || 0;
 
         if (isEditing && existingList) {
-            updateList(existingList.id, { name, budget: Number(budgetRaw) });
+            updateList(existingList.id, { name: name.trim(), budget: parsedBudget, currency });
         } else {
-            addList(name, Number(budgetRaw));
+            addList(name.trim(), parsedBudget);
         }
         router.back();
     };
 
+    const footerContent = (
+        <Button
+            title={isEditing ? 'Enregistrer' : 'Créer le budget'}
+            onPress={handleSubmit}
+            icon={<Ionicons name={isEditing ? 'checkmark' : 'add'} size={20} color="#fff" />}
+        />
+    );
+
     return (
-        <ScreenWrapper style={styles.container}>
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={{ flex: 1 }}
+        <ScreenWrapper edges={['bottom']}>
+            <Stack.Screen
+                options={{
+                    presentation: 'modal',
+                    headerShown: true,
+                    title: isEditing ? 'Modifier le budget' : 'Nouveau budget',
+                    headerLeft: () => (
+                        <TouchableOpacity onPress={() => router.back()}>
+                            <Ionicons name="close" size={24} color={colors.text.primary} />
+                        </TouchableOpacity>
+                    ),
+                }}
+            />
+
+            <FormContainer footer={footerContent}>
+                <Animated.View
+                    entering={FadeInUp.delay(100).springify()}
+                    style={styles.illustrationContainer}
                 >
-                    <View style={styles.form}>
-                        <Input
-                            label="List Name"
-                            placeholder="e.g., Weekly Groceries"
-                            value={name}
-                            onChangeText={setName}
-                            error={errors.name}
-                            autoFocus={!isEditing}
-                        />
-
-                        <View>
-                            <Input
-                                label="Budget Amount"
-                                placeholder="0"
-                                value={budgetDisplay}
-                                onChangeText={handleBudgetChange}
-                                keyboardType="numeric"
-                                error={errors.budget}
-                            />
-                            {budgetDisplay ? (
-                                <Text style={[styles.currencySuffix, { color: colors.text.tertiary }]}>{currency}</Text>
-                            ) : null}
-                        </View>
-
-                        <View style={styles.actions}>
-                            <Button
-                                title={isEditing ? "Update Budget" : "Create Budget"}
-                                onPress={handleSave}
-                                style={{ width: '100%' }}
-                            />
+                    <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+                        <View style={[styles.iconInner, { backgroundColor: colors.primary + '25' }]}>
+                            <Ionicons name="wallet" size={48} color={colors.primary} />
                         </View>
                     </View>
-                </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
+                </Animated.View>
+
+                <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.form}>
+                    <Input
+                        label="Nom du budget"
+                        placeholder="Ex: Courses, Vacances..."
+                        value={name}
+                        onChangeText={setName}
+                        autoFocus
+                    />
+
+                    <Input
+                        label="Montant du budget"
+                        placeholder="0"
+                        value={budget}
+                        onChangeText={setBudget}
+                        keyboardType="decimal-pad"
+                    />
+
+                    <View style={styles.currencySection}>
+                        <Text style={[styles.currencyLabel, { color: colors.text.tertiary }]}>Devise</Text>
+                        <View style={styles.currencyRow}>
+                            {currencies.map((c) => (
+                                <TouchableOpacity
+                                    key={c.code}
+                                    style={[
+                                        styles.currencyOption,
+                                        { backgroundColor: colors.system.systemGray6 },
+                                        currency === c.code && { backgroundColor: colors.primary }
+                                    ]}
+                                    onPress={() => setCurrency(c.code)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[
+                                        styles.currencySymbol,
+                                        { color: colors.text.secondary },
+                                        currency === c.code && { color: colors.text.inverse }
+                                    ]}>{c.symbol}</Text>
+                                    <Text style={[
+                                        styles.currencyName,
+                                        { color: colors.text.tertiary },
+                                        currency === c.code && { color: colors.text.inverse }
+                                    ]}>{c.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                </Animated.View>
+            </FormContainer>
         </ScreenWrapper>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        paddingTop: 24,
+    illustrationContainer: {
+        alignItems: 'center',
+        marginBottom: 32,
+        paddingTop: 16,
+    },
+    iconContainer: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    iconInner: {
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     form: {
+        gap: 16,
+    },
+    currencySection: {
+        marginTop: 8,
+    },
+    currencyLabel: {
+        fontSize: 13,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 8,
+        marginLeft: 4,
+    },
+    currencyRow: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    currencyOption: {
         flex: 1,
-        paddingTop: 32,
-        gap: 24,
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderRadius: 12,
     },
-    actions: {
-        marginTop: 16,
+    currencySymbol: {
+        fontSize: 22,
+        fontWeight: '700',
+        marginBottom: 4,
     },
-    currencySuffix: {
-        position: 'absolute',
-        right: 16,
-        top: 38,
-        fontSize: 17,
+    currencyName: {
+        fontSize: 13,
         fontWeight: '500',
     },
 });
