@@ -6,6 +6,7 @@ import {
     GroupExpense,
     GroupMember,
     Profile,
+    UpdateGroupExpensePayload
 } from '../types/expenses.type';
 
 export const GroupsService = {
@@ -141,6 +142,25 @@ export const GroupsService = {
         return data ?? [];
     },
 
+    async getGroupExpense(id: string): Promise<GroupExpense> {
+        const { data, error } = await supabase
+            .from('group_expenses')
+            .select(`
+        *,
+        payer:profiles!payer_id(*),
+        category:expense_categories(*),
+        splits:group_expense_splits(
+          *,
+          profile:profiles(*)
+        )
+      `)
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
     async createGroupExpense(payload: CreateGroupExpensePayload): Promise<GroupExpense> {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
@@ -171,6 +191,47 @@ export const GroupsService = {
             .insert(splits);
 
         if (splitsError) throw splitsError;
+
+        return expense;
+    },
+
+    async updateGroupExpense(payload: UpdateGroupExpensePayload): Promise<GroupExpense> {
+        const { id, splits, ...updates } = payload;
+
+        // 1. Update expense details
+        const { data: expense, error: expenseError } = await supabase
+            .from('group_expenses')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (expenseError) throw expenseError;
+
+        // 2. If splits are provided, update them (delete all and recreate)
+        // Simplification for the "I paid for X" model where there's usually 1 split (beneficiary)
+        if (splits) {
+            // Delete existing splits
+            const { error: deleteError } = await supabase
+                .from('group_expense_splits')
+                .delete()
+                .eq('expense_id', id);
+
+            if (deleteError) throw deleteError;
+
+            // Insert new splits
+            const newSplits = splits.map((s) => ({
+                expense_id: id,
+                user_id: s.user_id,
+                share_amount: s.share_amount,
+            }));
+
+            const { error: splitsError } = await supabase
+                .from('group_expense_splits')
+                .insert(newSplits);
+
+            if (splitsError) throw splitsError;
+        }
 
         return expense;
     },

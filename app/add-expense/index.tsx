@@ -2,13 +2,19 @@ import { Button } from '@/src/components/ui/Button';
 import { FormContainer } from '@/src/components/ui/FormContainer';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
-import { useCategories, useCreatePersonalExpense } from '@/src/hooks/queries/use-expenses.query';
+import {
+    useCategories,
+    useCreatePersonalExpense,
+    useDeletePersonalExpense,
+    usePersonalExpense,
+    useUpdatePersonalExpense,
+} from '@/src/hooks/queries/use-expenses.query';
 import { useThemeColors } from '@/src/theme';
 import { ExpenseCategory } from '@/src/types/expenses.type';
 import { formatDate } from '@/src/utils/balance';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
     Alert,
     FlatList,
@@ -21,20 +27,44 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 export default function AddExpenseScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams();
+    const id = params.id as string | undefined;
+
     const colors = useThemeColors();
     const { data: categories } = useCategories();
+
+    // Query hooks
+    const { data: expense } = usePersonalExpense(id);
     const createExpense = useCreatePersonalExpense();
+    const updateExpense = useUpdatePersonalExpense();
+    const deleteExpense = useDeletePersonalExpense();
 
     const [title, setTitle] = useState('');
     const [amount, setAmount] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | null>(null);
     const [expenseDate, setExpenseDate] = useState(() => new Date().toISOString().split('T')[0]);
 
+    // Populate form if editing
+    useEffect(() => {
+        if (expense) {
+            setTitle(expense.title);
+            setAmount(String(expense.amount));
+            setExpenseDate(expense.expense_date.split('T')[0]);
+            // If category matches by ID, set it. Assuming categories are loaded
+            if (categories && expense.category) {
+                const cat = categories.find(c => c.id === expense.category?.id);
+                if (cat) setSelectedCategory(cat);
+            }
+        }
+    }, [expense, categories]);
+
     const dates = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - i);
         return d.toISOString().split('T')[0];
     });
+
+    const isEditing = !!id;
 
     const handleSubmit = async () => {
         const parsedAmount = parseFloat(amount);
@@ -46,16 +76,52 @@ export default function AddExpenseScreen() {
         const finalTitle = title.trim() || selectedCategory?.name || 'Dépense';
 
         try {
-            await createExpense.mutateAsync({
-                title: finalTitle,
-                amount: parsedAmount,
-                category_id: selectedCategory?.id ?? null,
-                expense_date: expenseDate,
-            });
+            if (isEditing) {
+                await updateExpense.mutateAsync({
+                    id,
+                    payload: {
+                        title: finalTitle,
+                        amount: parsedAmount,
+                        category_id: selectedCategory?.id ?? null,
+                        expense_date: expenseDate,
+                    },
+                });
+            } else {
+                await createExpense.mutateAsync({
+                    title: finalTitle,
+                    amount: parsedAmount,
+                    category_id: selectedCategory?.id ?? null,
+                    expense_date: expenseDate,
+                });
+            }
             router.back();
         } catch (error) {
-            Alert.alert('Erreur', "Impossible d'ajouter la dépense");
+            Alert.alert('Erreur', isEditing ? "Impossible de modifier la dépense" : "Impossible d'ajouter la dépense");
         }
+    };
+
+    const handleDelete = () => {
+        Alert.alert(
+            'Supprimer',
+            'Veux-tu vraiment supprimer cette dépense ?',
+            [
+                { text: 'Annuler', style: 'cancel' },
+                {
+                    text: 'Supprimer',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            if (id) {
+                                await deleteExpense.mutateAsync(id);
+                                router.back();
+                            }
+                        } catch (error) {
+                            Alert.alert('Erreur', "Impossible de supprimer la dépense");
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     const renderDateItem = ({ item, index }: { item: string; index: number }) => {
@@ -120,12 +186,25 @@ export default function AddExpenseScreen() {
     };
 
     const footerContent = (
-        <Button
-            title="Ajouter la dépense"
-            onPress={handleSubmit}
-            loading={createExpense.isPending}
-            icon={<Ionicons name="checkmark" size={20} color="#fff" />}
-        />
+        <View style={{ gap: 12 }}>
+            <Button
+                title={isEditing ? "Modifier" : "Ajouter la dépense"}
+                onPress={handleSubmit}
+                loading={createExpense.isPending || updateExpense.isPending}
+                icon={<Ionicons name={isEditing ? "save" : "checkmark"} size={20} color="#fff" />}
+            />
+            {isEditing && (
+                <Button
+                    title="Supprimer"
+                    variant="outline"
+                    onPress={handleDelete}
+                    loading={deleteExpense.isPending}
+                    textStyle={{ color: colors.status.danger }}
+                    style={{ borderColor: colors.status.danger }}
+                    icon={<Ionicons name="trash" size={20} color={colors.status.danger} />}
+                />
+            )}
+        </View>
     );
 
     return (
@@ -134,7 +213,7 @@ export default function AddExpenseScreen() {
                 options={{
                     presentation: 'modal',
                     headerShown: true,
-                    title: 'Nouvelle dépense',
+                    title: isEditing ? 'Modifier la dépense' : 'Nouvelle dépense',
                     headerLeft: () => (
                         <TouchableOpacity onPress={() => router.back()}>
                             <Ionicons name="close" size={24} color={colors.text.primary} />

@@ -37,6 +37,14 @@ export function usePersonalExpensesByMonth(year: number, month: number) {
     });
 }
 
+export function usePersonalExpense(id?: string) {
+    return useQuery({
+        queryKey: [...expenseKeys.personal(), id],
+        queryFn: () => (id ? ExpensesService.getPersonalExpense(id) : Promise.resolve(null)),
+        enabled: !!id,
+    });
+}
+
 export function useCreatePersonalExpense() {
     const queryClient = useQueryClient();
 

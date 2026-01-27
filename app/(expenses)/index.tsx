@@ -17,7 +17,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -85,6 +85,13 @@ export default function ExpensesHome() {
             <TouchableOpacity
                 style={[styles.expenseItem, { backgroundColor: colors.surface }]}
                 activeOpacity={0.7}
+                onPress={() => {
+                    Haptics.selectionAsync();
+                    router.push({
+                        pathname: routes.expenses.addExpense,
+                        params: { id: item.id }
+                    });
+                }}
             >
                 <View style={[styles.categoryIcon, { backgroundColor: colors.surfaceHighlight }]}>
                     <Text style={styles.emoji}>{item.category?.emoji ?? '📦'}</Text>

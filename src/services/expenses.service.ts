@@ -40,6 +40,19 @@ export const ExpensesService = {
         if (error) throw error;
         return data ?? [];
     },
+    async getPersonalExpense(id: string): Promise<PersonalExpense> {
+        const { data, error } = await supabase
+            .from('personal_expenses')
+            .select(`
+        *,
+        category:expense_categories(*)
+      `)
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
 
     async getPersonalExpensesByMonth(year: number, month: number): Promise<PersonalExpense[]> {
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;

@@ -92,6 +92,12 @@ export type CreateGroupExpensePayload = {
     splits: { user_id: string; share_amount: number }[];
 };
 
+export type UpdateGroupExpensePayload = Partial<CreateGroupExpensePayload> & {
+    id: string;
+    splits?: { user_id: string; share_amount: number }[];
+
+};
+
 export type MemberBalance = {
     user_id: string;
     profile: Profile;

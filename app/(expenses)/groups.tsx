@@ -9,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     RefreshControl,
     StyleSheet,
@@ -64,40 +63,37 @@ export default function GroupsScreen() {
                 </View>
             </Animated.View>
 
-            {isLoading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                </View>
-            ) : !groups || groups.length === 0 ? (
-                <View style={styles.emptyState}>
-                    <View style={[styles.emptyIconContainer, { backgroundColor: colors.surface }]}>
-                        <Ionicons name="people-outline" size={48} color={colors.text.tertiary} />
-                    </View>
-                    <Text style={[styles.emptyText, { color: colors.text.primary }]}>
-                        Aucun groupe
-                    </Text>
-                    <Text style={[styles.emptySubtext, { color: colors.text.tertiary }]}>
-                        Crée un groupe pour partager des dépenses avec tes amis
-                    </Text>
-                    <Button
-                        title="Créer un groupe"
-                        onPress={() => router.push(routes.expenses.groups.create)}
-                        style={{ marginTop: 24 }}
-                        icon={<Ionicons name="people" size={20} color="#fff" />}
-                    />
-                </View>
-            ) : (
-                <FlatList
-                    data={groups}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderGroupItem}
-                    contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-                    }
-                />
-            )}
+            <FlatList
+                data={groups}
+                keyExtractor={(item) => item.id}
+                renderItem={renderGroupItem}
+                contentContainerStyle={[styles.listContent, (!groups || groups.length === 0) && styles.emptyListContent]}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+                }
+                ListEmptyComponent={
+                    !isLoading ? (
+                        <View style={styles.emptyState}>
+                            <View style={[styles.emptyIconContainer, { backgroundColor: colors.surface }]}>
+                                <Ionicons name="people-outline" size={48} color={colors.text.tertiary} />
+                            </View>
+                            <Text style={[styles.emptyText, { color: colors.text.primary }]}>
+                                Aucun groupe
+                            </Text>
+                            <Text style={[styles.emptySubtext, { color: colors.text.tertiary }]}>
+                                Crée un groupe pour partager des dépenses avec tes amis
+                            </Text>
+                            <Button
+                                title="Créer un groupe"
+                                onPress={() => router.push(routes.expenses.groups.create)}
+                                style={{ marginTop: 24 }}
+                                icon={<Ionicons name="people" size={20} color="#fff" />}
+                            />
+                        </View>
+                    ) : null
+                }
+            />
         </ScreenWrapper>
     );
 }
@@ -155,6 +151,11 @@ const styles = StyleSheet.create({
     listContent: {
         gap: 12,
         paddingBottom: 32,
+        flexGrow: 1,
+    },
+    emptyListContent: {
+        flex: 1,
+        justifyContent: 'center',
     },
     groupContent: {
         flexDirection: 'row',

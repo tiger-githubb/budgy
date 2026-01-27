@@ -41,7 +41,10 @@ function RootNavigator() {
   useEffect(() => {
     if (!isInitialized || isTransitioning) return;
 
-    const inExpensesGroup = segments[0] === '(expenses)';
+    const inExpensesGroup =
+      segments[0] === '(expenses)' ||
+      segments[0] === 'add-expense' ||
+      segments[0] === 'group';
     const inAuthScreen = segments[0] === 'auth';
 
     if (appMode === 'expenses') {
