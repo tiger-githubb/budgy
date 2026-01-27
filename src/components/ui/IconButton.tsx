@@ -1,7 +1,7 @@
 import { useThemeColors } from '@/src/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, ViewStyle } from 'react-native';
 
 interface IconButtonProps {
     name: keyof typeof Ionicons.glyphMap;
@@ -31,11 +31,11 @@ export const IconButton: React.FC<IconButtonProps> = ({
                 return { borderWidth: 1, borderColor: colors.border };
             case 'close':
                 // Specific style for modal close buttons: smaller, circular background
-                return { 
-                    backgroundColor: colors.surfaceHighlight, 
-                    width: 32, 
-                    height: 32, 
-                    borderRadius: 16 
+                return {
+                    backgroundColor: colors.surfaceHighlight,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16
                 };
             default:
                 return {};
@@ -47,22 +47,23 @@ export const IconButton: React.FC<IconButtonProps> = ({
     const containerSizeStyle = isCloseVariant ? {} : styles.defaultSize;
 
     return (
-        <TouchableOpacity
+        <Pressable
             onPress={onPress}
-            activeOpacity={0.7}
-            style={[
+            android_ripple={{ borderless: true, color: colors.text.primary + '20', radius: 20 }}
+            style={({ pressed }) => [
                 styles.container,
                 containerSizeStyle,
                 getContainerStyle(),
-                style
+                style,
+                pressed && Platform.OS !== 'android' && { opacity: 0.7 }
             ]}
         >
-            <Ionicons 
-                name={name} 
-                size={isCloseVariant ? 20 : size} 
-                color={iconColor} 
+            <Ionicons
+                name={name}
+                size={isCloseVariant ? 20 : size}
+                color={iconColor}
             />
-        </TouchableOpacity>
+        </Pressable>
     );
 };
 
