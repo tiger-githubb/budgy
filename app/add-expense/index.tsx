@@ -10,6 +10,7 @@ import {
     usePersonalExpense,
     useUpdatePersonalExpense,
 } from '@/src/hooks/queries/use-expenses.query';
+import { ExpensesService } from '@/src/services/expenses.service';
 import { useThemeColors } from '@/src/theme';
 import { ExpenseCategory } from '@/src/types/expenses.type';
 import { formatDate } from '@/src/utils/balance';
@@ -44,6 +45,25 @@ export default function AddExpenseScreen() {
     const [amount, setAmount] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | null>(null);
     const [expenseDate, setExpenseDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+
+    // Fetch suggestions when category changes
+    useEffect(() => {
+        const loadSuggestions = async () => {
+            if (selectedCategory?.id) {
+                try {
+                    const titles = await ExpensesService.getSuggestedTitles(selectedCategory.id);
+                    // Filter out current title if it matches exactly to avoid redundancy
+                    setSuggestions(titles.filter(t => t.toLowerCase() !== title.toLowerCase()));
+                } catch (error) {
+                    console.error('Failed to load suggestions', error);
+                }
+            } else {
+                setSuggestions([]);
+            }
+        };
+        loadSuggestions();
+    }, [selectedCategory?.id]);
 
     // Populate form if editing
     useEffect(() => {
@@ -186,6 +206,18 @@ export default function AddExpenseScreen() {
         );
     };
 
+    const renderSuggestionItem = ({ item, index }: { item: string; index: number }) => (
+        <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+            <TouchableOpacity
+                style={[styles.suggestionChip, { backgroundColor: colors.surfaceHighlight }]}
+                onPress={() => setTitle(item)}
+                activeOpacity={0.7}
+            >
+                <Text style={[styles.suggestionText, { color: colors.text.primary }]}>{item}</Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+
     const footerContent = (
         <View style={{ gap: 12 }}>
             <Button
@@ -272,6 +304,18 @@ export default function AddExpenseScreen() {
                 </View>
 
                 <View style={styles.section}>
+                    {suggestions.length > 0 && (
+                        <View style={styles.suggestionsContainer}>
+                            <FlatList
+                                data={suggestions}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                keyExtractor={(item) => item}
+                                renderItem={renderSuggestionItem}
+                                contentContainerStyle={styles.suggestionsList}
+                            />
+                        </View>
+                    )}
                     <Input
                         label="Titre (Optionnel)"
                         placeholder={selectedCategory ? selectedCategory.name : "Ex: Restaurant, Transport..."}
@@ -368,5 +412,20 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '500',
         textAlign: 'center',
+    },
+    suggestionsContainer: {
+        marginBottom: 12,
+    },
+    suggestionsList: {
+        gap: 8,
+    },
+    suggestionChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
+    },
+    suggestionText: {
+        fontSize: 13,
+        fontWeight: '500',
     },
 });

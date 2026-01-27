@@ -127,4 +127,19 @@ export const ExpensesService = {
 
         return { total, byCategory };
     },
+
+    async getSuggestedTitles(categoryId: string): Promise<string[]> {
+        const { data, error } = await supabase
+            .rpc('get_most_frequent_titles', {
+                p_category_id: categoryId,
+                p_limit: 5,
+            });
+
+        if (error) {
+            console.error('Error fetching suggestions:', error);
+            return [];
+        }
+
+        return data?.map((d: any) => d.title) || [];
+    },
 };
