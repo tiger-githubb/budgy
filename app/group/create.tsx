@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/Button';
 import { FormContainer } from '@/src/components/ui/FormContainer';
+import { IconButton } from '@/src/components/ui/IconButton';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useCreateGroup } from '@/src/hooks/queries/use-groups.query';
@@ -7,7 +8,7 @@ import { useThemeColors } from '@/src/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 export default function CreateGroupScreen() {
@@ -56,9 +57,7 @@ export default function CreateGroupScreen() {
                     headerShown: true,
                     title: 'Nouveau groupe',
                     headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()}>
-                            <Ionicons name="close" size={24} color={colors.text.primary} />
-                        </TouchableOpacity>
+                        <IconButton name="close" onPress={() => router.back()} />
                     ),
                 }}
             />

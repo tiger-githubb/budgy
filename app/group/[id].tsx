@@ -1,5 +1,6 @@
 import { Button } from "@/src/components/ui/Button";
 import { Card } from "@/src/components/ui/Card";
+import { IconButton } from "@/src/components/ui/IconButton";
 import { ScreenWrapper } from "@/src/components/ui/ScreenWrapper";
 import {
   useAddGroupMember,
@@ -444,21 +445,18 @@ export default function GroupDetailScreen() {
         options={{
           headerShown: true,
           title: group.name,
-          headerBackTitle: "",
+          // @ts-ignore
+          headerBackTitleVisible: false,
           headerTintColor: colors.text.primary,
           headerShadowVisible: false,
           headerStyle: { backgroundColor: colors.background },
           headerRight: () => (
-            <TouchableOpacity
+            <IconButton
+              name="person-add-outline"
               onPress={() => setShowInviteModal(true)}
+              color={colors.primary}
               style={{ marginRight: 8 }}
-            >
-              <Ionicons
-                name="person-add-outline"
-                size={24}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
+            />
           ),
         }}
       />
@@ -672,15 +670,11 @@ export default function GroupDetailScreen() {
               <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
                 Inviter un membre
               </Text>
-              <TouchableOpacity
+              <IconButton
+                name="close"
+                variant="close"
                 onPress={() => setShowInviteModal(false)}
-                style={[
-                  styles.modalCloseButton,
-                  { backgroundColor: colors.surfaceHighlight },
-                ]}
-              >
-                <Ionicons name="close" size={20} color={colors.text.primary} />
-              </TouchableOpacity>
+              />
             </View>
 
             <TextInput
@@ -913,13 +907,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
   },
-  modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
   emailInput: {
     borderWidth: 1,
     borderRadius: 12,

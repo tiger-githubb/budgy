@@ -126,7 +126,8 @@ export default function ArchivedListsScreen() {
                 options={{
                     headerShown: true,
                     title: 'Archives',
-                    headerBackTitle: '',
+                    // @ts-ignore
+                    headerBackTitleVisible: false,
                     headerTintColor: colors.text.primary,
                     headerShadowVisible: false,
                     headerStyle: { backgroundColor: colors.background },

@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/Button';
 import { FormContainer } from '@/src/components/ui/FormContainer';
+import { IconButton } from '@/src/components/ui/IconButton';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useStore } from '@/src/store/useStore';
@@ -7,7 +8,7 @@ import { useThemeColors } from '@/src/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 export default function ItemFormScreen() {
@@ -65,9 +66,7 @@ export default function ItemFormScreen() {
                     headerShown: true,
                     title: isEditing ? 'Modifier l\'élément' : 'Nouvel élément',
                     headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()}>
-                            <Ionicons name="close" size={24} color={colors.text.primary} />
-                        </TouchableOpacity>
+                        <IconButton name="close" onPress={() => router.back()} />
                     ),
                 }}
             />

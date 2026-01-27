@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/Button';
 import { FormContainer } from '@/src/components/ui/FormContainer';
+import { IconButton } from '@/src/components/ui/IconButton';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import { useStore } from '@/src/store/useStore';
@@ -69,9 +70,7 @@ export default function ListFormScreen() {
                     headerShown: true,
                     title: isEditing ? 'Modifier le budget' : 'Nouveau budget',
                     headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()}>
-                            <Ionicons name="close" size={24} color={colors.text.primary} />
-                        </TouchableOpacity>
+                        <IconButton name="close" onPress={() => router.back()} />
                     ),
                 }}
             />

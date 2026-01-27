@@ -1,5 +1,6 @@
 import { Button } from '@/src/components/ui/Button';
 import { FormContainer } from '@/src/components/ui/FormContainer';
+import { IconButton } from '@/src/components/ui/IconButton';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
 import {
@@ -215,9 +216,7 @@ export default function AddExpenseScreen() {
                     headerShown: true,
                     title: isEditing ? 'Modifier la dépense' : 'Nouvelle dépense',
                     headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()}>
-                            <Ionicons name="close" size={24} color={colors.text.primary} />
-                        </TouchableOpacity>
+                        <IconButton name="close" onPress={() => router.back()} />
                     ),
                 }}
             />

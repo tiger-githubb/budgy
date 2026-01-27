@@ -155,7 +155,8 @@ export default function ListDetailScreen() {
                 options={{
                     headerShown: true,
                     title: typeof list.name === 'string' ? list.name : 'Budget',
-                    headerBackTitle: '', // Hides the "Back" text, keeps the arrow
+                    // @ts-ignore
+                    headerBackTitleVisible: false,
                     headerTintColor: colors.text.primary,
                     headerShadowVisible: false,
                     headerStyle: { backgroundColor: colors.background },
