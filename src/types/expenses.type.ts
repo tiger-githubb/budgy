@@ -4,6 +4,7 @@ export type ExpenseCategory = {
     name: string;
     emoji: string;
     is_default: boolean;
+    order_number?: number;
     created_at: string;
 };
 

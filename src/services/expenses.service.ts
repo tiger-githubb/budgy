@@ -11,7 +11,7 @@ export const ExpensesService = {
         const { data, error } = await supabase
             .from('expense_categories')
             .select('*')
-            .order('name');
+            .order('order_number', { ascending: true, nullsFirst: false });
 
         if (error) throw error;
         return data ?? [];
