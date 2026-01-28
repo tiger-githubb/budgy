@@ -1,3 +1,4 @@
+import { OfflineSyncProvider } from '@/src/components/providers/OfflineSyncProvider';
 import { ModeTransition } from '@/src/components/ui/ModeTransition';
 import { AuthProvider } from '@/src/providers/auth.provider';
 import { QueryProvider } from '@/src/providers/query.provider';
@@ -93,10 +94,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryProvider>
         <AuthProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <RootNavigator />
-            <StatusBar style="auto" />
-          </ThemeProvider>
+          <OfflineSyncProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <RootNavigator />
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </OfflineSyncProvider>
         </AuthProvider>
       </QueryProvider>
     </GestureHandlerRootView>

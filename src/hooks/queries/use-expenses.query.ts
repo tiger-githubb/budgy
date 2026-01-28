@@ -1,7 +1,11 @@
+import { useOfflineStore } from '@/src/store/offline.store';
+import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Alert } from 'react-native';
 import { ExpensesService } from '../../services/expenses.service';
 import {
     CreatePersonalExpensePayload,
+    PersonalExpense,
     UpdatePersonalExpensePayload,
 } from '../../types/expenses.type';
 
@@ -47,12 +51,31 @@ export function usePersonalExpense(id?: string) {
 
 export function useCreatePersonalExpense() {
     const queryClient = useQueryClient();
+    const { addToQueue } = useOfflineStore();
 
     return useMutation({
-        mutationFn: (payload: CreatePersonalExpensePayload) =>
-            ExpensesService.createPersonalExpense(payload),
-        onSuccess: () => {
+        mutationFn: async (payload: CreatePersonalExpensePayload) => {
+            const netState = await NetInfo.fetch();
+            if (!netState.isConnected) {
+                addToQueue(payload);
+                // Return a fake response or specific signal
+                return {} as PersonalExpense;
+            }
+            return ExpensesService.createPersonalExpense(payload);
+        },
+        onSuccess: (_, variables, context) => {
+            // If it was an offline addition (we can check if result is empty or handle specific logic)
+            // But simply invalidating queries is fine, though offline data won't show up in standard lists 
+            // unless we merge local queue with fetched data (advanced).
+            // For now, let's just let it succeed.
             queryClient.invalidateQueries({ queryKey: expenseKeys.personal() });
+
+            // Optionally check if we are offline to show a toast
+            NetInfo.fetch().then(state => {
+                if (!state.isConnected) {
+                    Alert.alert('Hors ligne', 'Dépense sauvegardée localement. Elle sera synchronisée une fois la connexion rétablie.');
+                }
+            });
         },
     });
 }
