@@ -66,10 +66,10 @@ export default function ArchivedListsScreen() {
     };
 
     const handleBulkDelete = () => {
-        Alert.alert("Delete Forever", `Permanently delete ${selectedIds.length} list(s)?`, [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert("Supprimer", `Supprimer définitivement ${selectedIds.length} liste(s) ?`, [
+            { text: "Annuler", style: "cancel" },
             {
-                text: "Delete", style: "destructive", onPress: () => {
+                text: "Supprimer", style: "destructive", onPress: () => {
                     deleteLists(selectedIds);
                     exitSelectionMode();
                 }
@@ -125,8 +125,12 @@ export default function ArchivedListsScreen() {
             <Stack.Screen
                 options={{
                     headerShown: true,
-                    title: 'Archived Lists',
-                    headerBackTitle: ''
+                    title: 'Archives',
+                    // @ts-ignore
+                    headerBackTitleVisible: false,
+                    headerTintColor: colors.text.primary,
+                    headerShadowVisible: false,
+                    headerStyle: { backgroundColor: colors.background },
                 }}
             />
 
@@ -135,7 +139,7 @@ export default function ArchivedListsScreen() {
                     <TouchableOpacity onPress={exitSelectionMode}>
                         <Ionicons name="close" size={24} color={colors.text.primary} />
                     </TouchableOpacity>
-                    <Text style={[styles.selectionTitle, { color: colors.text.primary }]}>{selectedIds.length} Selected</Text>
+                    <Text style={[styles.selectionTitle, { color: colors.text.primary }]}>{selectedIds.length} sélectionné(s)</Text>
                     <View style={{ flexDirection: 'row', gap: 16 }}>
                         <TouchableOpacity onPress={handleBulkRestore}>
                             <Ionicons name="refresh" size={24} color={colors.primary} />
@@ -149,7 +153,7 @@ export default function ArchivedListsScreen() {
 
             {archivedLists.length === 0 ? (
                 <View style={styles.emptyState}>
-                    <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>No archived lists.</Text>
+                    <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>Aucune liste archivée.</Text>
                 </View>
             ) : (
                 <View style={[styles.listContainer, { backgroundColor: colors.background }]}>

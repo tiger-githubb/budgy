@@ -1,63 +1,78 @@
 import { useThemeColors } from '@/src/theme';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
-import { StyleProp, StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+} from 'react-native-reanimated';
 
 interface CardProps {
     children: React.ReactNode;
     style?: StyleProp<ViewStyle>;
     onPress?: () => void;
-    variant?: 'elevated' | 'flat' | 'insetGrouped';
     selected?: boolean;
 }
 
-export const Card: React.FC<CardProps> = ({
-    children,
-    style,
-    onPress,
-    variant = 'insetGrouped',
-    selected = false
-}) => {
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
+export const Card: React.FC<CardProps> = ({ children, style, onPress, selected }) => {
     const colors = useThemeColors();
+    const scale = useSharedValue(1);
 
-    const getCardStyle = (): ViewStyle => {
-        const base: ViewStyle = {
-            backgroundColor: colors.surface,
-            borderRadius: 12, // iOS standard
-        };
-
-        if (selected) {
-            return {
-                ...base,
-                borderWidth: 2,
-                borderColor: colors.primary,
-            };
-        }
-
-        return base;
+    const handlePressIn = () => {
+        scale.value = withSpring(0.98, { damping: 15, stiffness: 200 });
     };
 
-    const Content = (
-        <View style={[styles.card, getCardStyle(), style]}>
+    const handlePressOut = () => {
+        scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+    };
+
+    const handlePress = () => {
+        if (onPress) {
+            Haptics.selectionAsync();
+            onPress();
+        }
+    };
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    return (
+        <AnimatedTouchable
+            onPress={handlePress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            activeOpacity={onPress ? 0.9 : 1}
+            disabled={!onPress}
+            style={[
+                styles.card,
+                {
+                    backgroundColor: colors.surface,
+                },
+                selected && {
+                    borderColor: colors.primary,
+                    borderWidth: 2,
+                },
+                animatedStyle,
+                style,
+            ]}
+        >
             {children}
-        </View>
+        </AnimatedTouchable>
     );
-
-    if (onPress) {
-        return (
-            <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.touchable}>
-                {Content}
-            </TouchableOpacity>
-        );
-    }
-
-    return Content;
 };
 
 const styles = StyleSheet.create({
-    touchable: {
-        marginBottom: 12,
-    },
     card: {
-        padding: 16,
+        borderRadius: 18,
+        padding: 18,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
     },
 });
