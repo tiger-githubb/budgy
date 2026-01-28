@@ -3,58 +3,49 @@ import { FormContainer } from '@/src/components/ui/FormContainer';
 import { IconButton } from '@/src/components/ui/IconButton';
 import { Input } from '@/src/components/ui/Input';
 import { ScreenWrapper } from '@/src/components/ui/ScreenWrapper';
-import { useStore } from '@/src/store/useStore';
+import { useCreateGroup } from '@/src/hooks/queries/use-groups.query';
 import { useThemeColors } from '@/src/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { Stack, useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
-export default function ItemFormScreen() {
-    const { listId, itemId } = useLocalSearchParams<{ listId: string; itemId?: string }>();
+export default function CreateGroupScreen() {
     const router = useRouter();
     const colors = useThemeColors();
-    const { lists, addItem, updateItem } = useStore();
-
-    const list = lists.find(l => l.id === listId);
-    const isEditing = !!itemId;
-    const existingItem = isEditing && list ? list.items.find(i => i.id === itemId) : null;
+    const createGroup = useCreateGroup();
 
     const [name, setName] = useState('');
-    const [amount, setAmount] = useState('');
+    const [description, setDescription] = useState('');
 
-    useEffect(() => {
-        if (existingItem) {
-            setName(existingItem.name);
-            setAmount(existingItem.amount.toString());
-        }
-    }, [existingItem]);
-
-    const handleSubmit = () => {
+    const handleCreate = async () => {
         if (!name.trim()) {
-            Alert.alert('Erreur', 'Ajoute un nom pour l\'élément');
+            Alert.alert('Erreur', 'Ajoute un nom pour le groupe');
             return;
         }
-        const parsedAmount = parseFloat(amount) || 0;
 
-        if (isEditing && existingItem && list) {
-            updateItem(list.id, existingItem.id, { name: name.trim(), amount: parsedAmount });
-        } else if (list) {
-            addItem(list.id, name.trim(), parsedAmount);
+        try {
+            await createGroup.mutateAsync({
+                name: name.trim(),
+                description: description.trim() || undefined,
+            });
+            router.back();
+        } catch (error: any) {
+            console.error('Group creation error:', error);
+            Alert.alert(
+                'Erreur',
+                error?.message || 'Impossible de créer le groupe'
+            );
         }
-        router.back();
     };
-
-    if (!list) {
-        return null;
-    }
 
     const footerContent = (
         <Button
-            title={isEditing ? 'Enregistrer' : 'Ajouter'}
-            onPress={handleSubmit}
-            icon={<Ionicons name={isEditing ? 'checkmark' : 'add'} size={20} color="#fff" />}
+            title="Créer le groupe"
+            onPress={handleCreate}
+            loading={createGroup.isPending}
+            icon={<Ionicons name="people" size={20} color="#fff" />}
         />
     );
 
@@ -64,7 +55,7 @@ export default function ItemFormScreen() {
                 options={{
                     presentation: 'modal',
                     headerShown: true,
-                    title: isEditing ? 'Modifier l\'élément' : 'Nouvel élément',
+                    title: 'Nouveau groupe',
                     headerLeft: () => (
                         <IconButton name="close" onPress={() => router.back()} />
                     ),
@@ -78,26 +69,31 @@ export default function ItemFormScreen() {
                 >
                     <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
                         <View style={[styles.iconInner, { backgroundColor: colors.primary + '25' }]}>
-                            <Ionicons name="cart" size={48} color={colors.primary} />
+                            <Ionicons name="people" size={48} color={colors.primary} />
                         </View>
                     </View>
                 </Animated.View>
 
-                <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.form}>
+                <Animated.View
+                    entering={FadeInDown.delay(200).springify()}
+                    style={styles.form}
+                >
                     <Input
-                        label="Nom"
-                        placeholder="Ex: Pain, Lait..."
+                        label="Nom du groupe"
+                        placeholder="Ex: Colocation, Vacances..."
                         value={name}
                         onChangeText={setName}
                         autoFocus
                     />
 
                     <Input
-                        label="Montant"
-                        placeholder="0"
-                        value={amount}
-                        onChangeText={setAmount}
-                        keyboardType="decimal-pad"
+                        label="Description (optionnel)"
+                        placeholder="Une courte description..."
+                        value={description}
+                        onChangeText={setDescription}
+                        multiline
+                        numberOfLines={3}
+                        style={{ minHeight: 80, textAlignVertical: 'top', paddingTop: 14 }}
                     />
                 </Animated.View>
             </FormContainer>
@@ -127,6 +123,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     form: {
-        gap: 16,
+        gap: 8,
     },
 });

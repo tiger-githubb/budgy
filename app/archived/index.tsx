@@ -66,10 +66,10 @@ export default function ArchivedListsScreen() {
     };
 
     const handleBulkDelete = () => {
-        Alert.alert("Delete Forever", `Permanently delete ${selectedIds.length} list(s)?`, [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert("Supprimer", `Supprimer définitivement ${selectedIds.length} liste(s) ?`, [
+            { text: "Annuler", style: "cancel" },
             {
-                text: "Delete", style: "destructive", onPress: () => {
+                text: "Supprimer", style: "destructive", onPress: () => {
                     deleteLists(selectedIds);
                     exitSelectionMode();
                 }
@@ -122,38 +122,38 @@ export default function ArchivedListsScreen() {
 
     return (
         <ScreenWrapper>
-            <Stack.Screen options={{ headerShown: false }} />
+            <Stack.Screen
+                options={{
+                    headerShown: true,
+                    title: 'Archives',
+                    // @ts-ignore
+                    headerBackTitleVisible: false,
+                    headerTintColor: colors.text.primary,
+                    headerShadowVisible: false,
+                    headerStyle: { backgroundColor: colors.background },
+                }}
+            />
 
-            <View style={styles.header}>
-                {isSelectionMode ? (
-                    <View style={[styles.selectionHeader, { backgroundColor: colors.surfaceHighlight }]}>
-                        <TouchableOpacity onPress={exitSelectionMode}>
-                            <Ionicons name="close" size={24} color={colors.text.primary} />
+            {isSelectionMode && (
+                <View style={[styles.selectionHeader, { backgroundColor: colors.surfaceHighlight }]}>
+                    <TouchableOpacity onPress={exitSelectionMode}>
+                        <Ionicons name="close" size={24} color={colors.text.primary} />
+                    </TouchableOpacity>
+                    <Text style={[styles.selectionTitle, { color: colors.text.primary }]}>{selectedIds.length} sélectionné(s)</Text>
+                    <View style={{ flexDirection: 'row', gap: 16 }}>
+                        <TouchableOpacity onPress={handleBulkRestore}>
+                            <Ionicons name="refresh" size={24} color={colors.primary} />
                         </TouchableOpacity>
-                        <Text style={[styles.selectionTitle, { color: colors.text.primary }]}>{selectedIds.length} Selected</Text>
-                        <View style={{ flexDirection: 'row', gap: 16 }}>
-                            <TouchableOpacity onPress={handleBulkRestore}>
-                                <Ionicons name="refresh" size={24} color={colors.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={handleBulkDelete}>
-                                <Ionicons name="trash-outline" size={24} color={colors.status.danger} />
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity onPress={handleBulkDelete}>
+                            <Ionicons name="trash-outline" size={24} color={colors.status.danger} />
+                        </TouchableOpacity>
                     </View>
-                ) : (
-                    <>
-                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
-                        </TouchableOpacity>
-                        <Text style={[styles.title, { color: colors.text.primary }]}>Archived Lists</Text>
-                        <View style={{ width: 24 }} />
-                    </>
-                )}
-            </View>
+                </View>
+            )}
 
             {archivedLists.length === 0 ? (
                 <View style={styles.emptyState}>
-                    <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>No archived lists.</Text>
+                    <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>Aucune liste archivée.</Text>
                 </View>
             ) : (
                 <View style={[styles.listContainer, { backgroundColor: colors.background }]}>
@@ -170,31 +170,14 @@ export default function ArchivedListsScreen() {
 }
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginVertical: 24,
-        height: 48,
-    },
-    backButton: {
-        padding: 8,
-        marginLeft: -8,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: '700',
-        textAlign: 'center',
-        flex: 1,
-    },
     selectionHeader: {
-        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 8,
         borderRadius: 12,
         height: 48,
+        marginBottom: 16,
     },
     selectionTitle: {
         fontSize: 17,

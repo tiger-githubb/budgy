@@ -14,22 +14,15 @@ export default function ListDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const colors = useThemeColors();
-    const { lists, deleteList, updateList, addItem, updateItem, deleteItem, reorderItems, settings } = useStore();
+    const { lists, deleteList, updateItem, deleteItem, reorderItems } = useStore();
 
     const list = lists.find((l) => l.id === id);
 
     if (!list) {
-        return (
-            <ScreenWrapper>
-                <Text style={{ color: colors.text.primary }}>List not found</Text>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Text style={{ color: colors.primary, marginTop: 20 }}>Go Back</Text>
-                </TouchableOpacity>
-            </ScreenWrapper>
-        );
+        return null;
     }
 
-    const { planned, spent, remaining, isOverBudget } = calculateListTotals(list);
+    const { planned, remaining, isOverBudget } = calculateListTotals(list);
 
     const plannedItems = useMemo(() =>
         list.items.filter(i => i.status === 'PLANNED').sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
@@ -44,25 +37,25 @@ export default function ListDetailScreen() {
         [list.items]);
 
     const handleDeleteList = () => {
-        Alert.alert('Delete List', 'Are you sure?', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert('Supprimer', 'Voulez-vous vraiment supprimer ce budget ?', [
+            { text: 'Annuler', style: 'cancel' },
             {
-                text: 'Delete',
+                text: 'Supprimer',
                 style: 'destructive',
                 onPress: () => {
                     deleteList(list.id);
-                    router.back();
+                    router.replace('/(planning)');
                 },
             },
         ]);
     };
 
     const handleEditList = () => {
-        router.push(`/list/form?id=${list.id}`);
+        router.push({ pathname: '/list/form', params: { id: list.id } });
     };
 
     const handleAddItem = () => {
-        router.push(`/item/form?listId=${list.id}`);
+        router.push({ pathname: '/item/form', params: { listId: list.id } });
     };
 
     const onItemSwipeLeft = (item: Item) => {
@@ -74,9 +67,9 @@ export default function ListDetailScreen() {
     };
 
     const onItemSwipeRight = (item: Item) => {
-        Alert.alert("Delete Item", "Permanently delete?", [
-            { text: "Cancel" },
-            { text: "Delete", style: 'destructive', onPress: () => deleteItem(list.id, item.id) }
+        Alert.alert("Supprimer", "Supprimer définitivement ?", [
+            { text: "Annuler" },
+            { text: "Supprimer", style: 'destructive', onPress: () => deleteItem(list.id, item.id) }
         ]);
     };
 
@@ -89,7 +82,7 @@ export default function ListDetailScreen() {
     };
 
     const handleEditItem = (item: Item) => {
-        router.push(`/item/form?listId=${list.id}&itemId=${item.id}`);
+        router.push({ pathname: '/item/form', params: { listId: list.id, itemId: item.id } });
     };
 
     const renderItemCard = ({ item, drag, isActive }: { item: Item, drag: () => void, isActive: boolean }) => {
@@ -100,8 +93,8 @@ export default function ListDetailScreen() {
             <SwipeableItem
                 onSwipeLeft={() => onItemSwipeLeft(item)}
                 onSwipeRight={() => onItemSwipeRight(item)}
-                leftLabel={isCancelled ? "Restore" : "Cancel"}
-                rightLabel="Delete"
+                leftLabel={isCancelled ? "Restaurer" : "Annuler"}
+                rightLabel="Supprimer"
                 leftColor={isCancelled ? colors.status.info : colors.text.tertiary}
                 rightColor={colors.status.danger}
                 leftIcon={isCancelled ? "arrow-undo" : "close-circle"}
@@ -161,7 +154,9 @@ export default function ListDetailScreen() {
             <Stack.Screen
                 options={{
                     headerShown: true,
-                    title: list.name,
+                    title: typeof list.name === 'string' ? list.name : 'Budget',
+                    // @ts-ignore
+                    headerBackTitleVisible: false,
                     headerTintColor: colors.text.primary,
                     headerShadowVisible: false,
                     headerStyle: { backgroundColor: colors.background },
@@ -190,8 +185,8 @@ export default function ListDetailScreen() {
                 <NestableScrollContainer contentContainerStyle={{ paddingBottom: 100 }}>
 
                     <View style={styles.sectionHeader}>
-                        <Text style={[styles.sectionTitle, { color: colors.text.secondary }]}>To Buy ({plannedItems.length})</Text>
-                        {!plannedItems.length && <Text style={[styles.emptyFiles, { color: colors.text.tertiary }]}>Nothing planned.</Text>}
+                        <Text style={[styles.sectionTitle, { color: colors.text.secondary }]}>À acheter ({plannedItems.length})</Text>
+                        {!plannedItems.length && <Text style={[styles.emptyFiles, { color: colors.text.tertiary }]}>Rien de prévu.</Text>}
                     </View>
                     <NestableDraggableFlatList
                         data={plannedItems}
@@ -203,7 +198,7 @@ export default function ListDetailScreen() {
                     {(purchasedItems.length > 0) && (
                         <>
                             <View style={styles.sectionHeader}>
-                                <Text style={[styles.sectionTitle, { color: colors.status.success }]}>Purchased ({purchasedItems.length})</Text>
+                                <Text style={[styles.sectionTitle, { color: colors.status.success }]}>Acheté ({purchasedItems.length})</Text>
                             </View>
                             <NestableDraggableFlatList
                                 data={purchasedItems}
@@ -217,7 +212,7 @@ export default function ListDetailScreen() {
                     {(cancelledItems.length > 0) && (
                         <>
                             <View style={styles.sectionHeader}>
-                                <Text style={[styles.sectionTitle, { color: colors.text.tertiary }]}>Cancelled ({cancelledItems.length})</Text>
+                                <Text style={[styles.sectionTitle, { color: colors.text.tertiary }]}>Annulé ({cancelledItems.length})</Text>
                             </View>
                             <NestableDraggableFlatList
                                 data={cancelledItems}
